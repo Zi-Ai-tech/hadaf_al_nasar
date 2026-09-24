@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Shipment Update</title>
+</head>
+<body>
+    <h2>Hadaf Al Nasar Cargo Transport - Shipment Update</h2>
+    <p>Dear {{ customer.contact_person }},</p>
+    
+    <p>Your shipment status has been updated:</p>
+    
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+        <strong>Tracking Number:</strong> {{ shipment.tracking_number }}<br>
+        <strong>Status:</strong> {{ shipment.status.value|title }}<br>
+        <strong>Origin:</strong> {{ shipment.origin }}<br>
+        <strong>Destination:</strong> {{ shipment.destination }}<br>
+        {% if shipment.estimated_delivery %}
+        <strong>Estimated Delivery:</strong> {{ shipment.estimated_delivery.strftime('%Y-%m-%d %H:%M') }}<br>
+        {% endif %}
+    </div>
+    
+    <p>Thank you for choosing Hadaf Al Nasar Cargo Transport.</p>
+    
+    <p>Best regards,<br>
+    Hadaf Al Nasar Team<br>
+    Dubai, UAE<br>
+    Phone: +971 4 123 4567<br>
+    Email: info@hadafalnasar.ae</p>
+</body>
+</html>

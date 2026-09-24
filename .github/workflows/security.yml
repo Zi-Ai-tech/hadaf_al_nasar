@@ -1,0 +1,52 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install safety bandit
+        pip install -r requirements.txt
+    
+    - name: Run safety check
+      run: safety check --full-report
+    
+    - name: Run bandit static analysis
+      run: bandit -r app/ -f json -o bandit-report.json
+    
+    - name: Run dependency audit
+      run: |
+        pip install pip-audit
+        pip-audit --format json --output pip-audit-report.json
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          pip-audit-report.json
+    
+    - name: Check for critical vulnerabilities
+      run: |
+        if grep -q "CRITICAL" bandit-report.json; then
+          echo "Critical vulnerabilities found!"
+          exit 1
+        fi

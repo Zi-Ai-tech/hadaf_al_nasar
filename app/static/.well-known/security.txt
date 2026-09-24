@@ -1,0 +1,25 @@
+# app/static/.well-known/security.txt
+# Our security address for vulnerability reports
+Contact: security@yourcompany.com
+Contact: https://yourcompany.com/security
+
+# Encryption key for secure communication
+Encryption: https://yourcompany.com/security/pgp-key.txt
+
+# Policy page
+Policy: https://yourcompany.com/security-policy
+
+# Hiring security professionals
+Hiring: https://yourcompany.com/careers/security
+
+# Preferred languages
+Preferred-Languages: en, ar
+
+# Acknowledgments page
+Acknowledgments: https://yourcompany.com/security/hall-of-fame
+
+# Expiration date (update annually)
+Expires: 2024-12-31T23:59:59.999Z
+
+# Canonical URL
+Canonical: https://yourcompany.com/.well-known/security.txt

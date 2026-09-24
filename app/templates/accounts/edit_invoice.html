@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Invoice - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<!-- Safety check for invoice items -->
+{% if not invoice_items %}
+    <div class="alert alert-warning">
+        <strong>Warning:</strong> No invoice items found.
+    </div>
+{% endif %}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Edit Invoice</h2>
+        <a href="{{ url_for('invoices.view_invoice_details', invoice_id=invoice.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Invoice
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('invoices.edit_invoice', invoice_id=invoice.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- Basic Invoice Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5>Basic Information</h5>
+                        <div class="mb-3">
+                            <label for="invoice_number" class="form-label">Invoice Number *</label>
+                            <input type="text" class="form-control" id="invoice_number" name="invoice_number" 
+                                   value="{{ invoice.invoice_number }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="customer_id" class="form-label">Customer *</label>
+                            <select class="form-select" id="customer_id" name="customer_id" required>
+                                <option value="">Select Customer</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}" 
+                                        {% if invoice.customer_id == customer.id %}selected{% endif %}>
+                                    {{ customer.company_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5>Dates & Status</h5>
+                        <div class="mb-3">
+                            <label for="issue_date" class="form-label">Issue Date *</label>
+                            <input type="date" class="form-control" id="issue_date" name="issue_date" 
+                                   value="{{ invoice.issue_date.strftime('%Y-%m-%d') if invoice.issue_date else '' }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="due_date" class="form-label">Due Date *</label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" 
+                                   value="{{ invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date else '' }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="pending" {% if invoice.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="paid" {% if invoice.status == 'paid' %}selected{% endif %}>Paid</option>
+                                <option value="cancelled" {% if invoice.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Items -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5>Invoice Items</h5>
+                        <div id="items-container">
+                            {% for item in invoice_items %}
+                            <div class="item-row border p-3 mb-3">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Description</label>
+                                        <input type="text" class="form-control" name="item_description[]" 
+                                               value="{{ item.description }}" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Quantity</label>
+                                        <input type="number" class="form-control" name="item_quantity[]" 
+                                               value="{{ item.quantity }}" min="1" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Unit Price (AED)</label>
+                                        <input type="number" class="form-control" name="item_unit_price[]" 
+                                               value="{{ item.unit_price }}" step="0.01" min="0" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">VAT</label>
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="item_is_vat[]" 
+                                                   value="true" {% if item.is_vat %}checked{% endif %}>
+                                            <label class="form-check-label">Apply 5% VAT</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-danger remove-item w-100">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <button type="button" id="add-item" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Invoice
+                        </button>
+                        <a href="{{ url_for('invoices.view_invoice_details', invoice_id=invoice.id) }}" class="btn btn-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for dynamic item management -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const itemsContainer = document.getElementById('items-container');
+    const addItemBtn = document.getElementById('add-item');
+    
+    // Add new item
+    addItemBtn.addEventListener('click', function() {
+        const newItem = `
+            <div class="item-row border p-3 mb-3">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">Description</label>
+                        <input type="text" class="form-control" name="item_description[]" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" class="form-control" name="item_quantity[]" value="1" min="1" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Unit Price (AED)</label>
+                        <input type="number" class="form-control" name="item_unit_price[]" step="0.01" min="0" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">VAT</label>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="item_is_vat[]" value="true">
+                            <label class="form-check-label">Apply 5% VAT</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-danger remove-item w-100">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        itemsContainer.insertAdjacentHTML('beforeend', newItem);
+    });
+    
+    // Remove item
+    itemsContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-item')) {
+            e.target.closest('.item-row').remove();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+# Environment files (the redacted template remains versioned)
+.env
+.env.*
+!.env.example
+
+# Python virtual environments and bytecode
+venv/
+.venv/
+env/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Runtime logs
+logs/
+*.log
+
+# Local database artifacts
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated project inventories
+project_tree.txt
+project_structure.txt
+structure.txt
+dependency_tree.txt
+installed_packages.txt

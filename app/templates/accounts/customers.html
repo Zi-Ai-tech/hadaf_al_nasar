@@ -1,0 +1,910 @@
+{% extends 'base.html' %}
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Customers</h2>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Workflow Explanation -->
+    <div class="alert alert-info mb-3">
+        <strong>Customer Management Workflow:</strong><br>
+        1. <span class="text-primary">Deactivate</span> active customers first<br>
+        2. <span class="text-danger">Delete</span> inactive customers (only if no invoices)<br>
+        3. <span class="text-success">Activate</span> to restore inactive customers
+    </div>
+
+    <!-- Add Customer Button and Filter Controls -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+            <i class="bi bi-person-plus"></i> Add New Customer
+        </button>
+        
+        <!-- Filter Buttons -->
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('customers.customers', filter='active') }}" 
+               class="btn btn-outline-primary {% if current_filter == 'active' %}active{% endif %}">
+                Active Customers
+            </a>
+            <a href="{{ url_for('customers.customers', filter='inactive') }}" 
+               class="btn btn-outline-warning {% if current_filter == 'inactive' %}active{% endif %}">
+                Inactive Customers
+            </a>
+            <a href="{{ url_for('customers.customers', filter='all') }}" 
+               class="btn btn-outline-secondary {% if current_filter == 'all' %}active{% endif %}">
+                All Customers
+            </a>
+        </div>
+    </div>
+
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addCustomerModalLabel">Add New Customer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addCustomerForm" class="needs-validation" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          
+          <div class="row g-3">
+            <!-- Company Name - Required -->
+            <div class="col-md-4 mb-3">
+              <label for="company_name" class="form-label">Company Name <span class="text-danger">*</span></label>
+              <input type="text" name="company_name" id="company_name" class="form-control" placeholder="Company Name" required>
+              <div class="invalid-feedback">Company Name is required.</div>
+            </div>
+            <!-- TRN - Required -->
+            <div class="col-md-4">
+              <label for="trn" class="form-label">TRN <span class="text-danger">*</span></label>
+              <input type="text" name="trn" id="trn" class="form-control" placeholder="TRN (15 digits)" required maxlength="15" minlength="15" pattern="\d{15}">
+              <div class="invalid-feedback" id="trnFeedback">TRN must be exactly 15 digits.</div>
+            </div>
+            <!-- Trade License Number - Required -->
+            <div class="col-md-4">
+              <label for="trade_license_number" class="form-label">Trade License Number <span class="text-danger">*</span></label>
+              <input type="text" name="trade_license_number" id="trade_license_number" class="form-control" placeholder="Trade License Number" required>
+              <div class="invalid-feedback">Trade License Number is required.</div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" name="email" id="email" class="form-control" placeholder="Email">
+              <div class="invalid-feedback">Please enter a valid email address.</div>
+            </div>
+            <div class="col-md-4">
+              <label for="mobile" class="form-label">Mobile</label>
+              <input type="text" name="mobile" id="mobile" class="form-control" placeholder="Mobile">
+              <div class="invalid-feedback">Please enter a valid mobile number.</div>
+            </div>
+            <div class="col-md-4">
+              <label for="phone" class="form-label">Phone</label>
+              <input type="text" name="phone" id="phone" class="form-control" placeholder="Phone">
+              <div class="invalid-feedback">Please enter a valid phone number.</div>
+            </div>
+
+            <!-- Additional fields -->
+            <div class="col-md-4">
+              <label for="legal_form" class="form-label">Legal Form</label>
+              <input type="text" name="legal_form" id="legal_form" class="form-control" placeholder="Legal Form">
+            </div>
+            <div class="col-md-4">
+              <label for="contact_person" class="form-label">Contact Person</label>
+              <input type="text" name="contact_person" id="contact_person" class="form-control" placeholder="Contact Person">
+            </div>
+            <div class="col-md-4">
+              <label for="contact_designation" class="form-label">Contact Designation</label>
+              <input type="text" name="contact_designation" id="contact_designation" class="form-control" placeholder="Contact Designation">
+            </div>
+            
+            <div class="col-md-6">
+              <label for="address" class="form-label">Address</label>
+              <input type="text" name="address" id="address" class="form-control" placeholder="Address">
+            </div>
+            <div class="col-md-3">
+              <label for="city" class="form-label">City</label>
+              <input type="text" name="city" id="city" class="form-control" placeholder="City">
+            </div>
+            <div class="col-md-3">
+              <label for="emirate" class="form-label">Emirate</label>
+              <input type="text" name="emirate" id="emirate" class="form-control" placeholder="Emirate">
+            </div>
+            
+            <div class="col-md-3">
+              <label for="po_box" class="form-label">PO Box</label>
+              <input type="text" name="po_box" id="po_box" class="form-control" placeholder="PO Box">
+            </div>
+            <div class="col-md-3">
+              <label for="business_activities" class="form-label">Business Activities</label>
+              <input type="text" name="business_activities" id="business_activities" class="form-control" placeholder="Business Activities">
+            </div>
+            <div class="col-md-3">
+              <label for="industry_type" class="form-label">Industry Type</label>
+              <input type="text" name="industry_type" id="industry_type" class="form-control" placeholder="Industry Type">
+            </div>
+            <div class="col-md-3">
+              <label for="credit_limit" class="form-label">Credit Limit</label>
+              <input type="number" name="credit_limit" id="credit_limit" class="form-control" placeholder="Credit Limit" step="0.01" min="0">
+              <div class="invalid-feedback">Credit limit must be a non-negative number.</div>
+            </div>
+            
+            <div class="col-md-3">
+              <label for="payment_terms" class="form-label">Payment Terms</label>
+              <select name="payment_terms" id="payment_terms" class="form-control">
+                <option value="NET15">NET 15</option>
+                <option value="NET30" selected>NET 30</option>
+                <option value="NET45">NET 45</option>
+                <option value="NET60">NET 60</option>
+                <option value="Due on receipt">Due on receipt</option>
+              </select>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-center">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="is_active" checked>
+                <label class="form-check-label" for="is_active">Active Customer</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-3">
+            <button type="submit" class="btn btn-success" id="addCustomerSubmit">
+              <span class="submit-text">Save Customer</span>
+              <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search -->
+<div class="mb-3">
+  <input type="text" id="searchInput" class="form-control" placeholder="Search customers by name, email, mobile, or TRN...">
+</div>
+
+    <!-- Customers Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped" id="customersTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Status</th>
+                    <th>Company Name</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>TRN</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr id="customer-{{ c.id }}" class="{% if not c.is_active %}table-warning{% endif %}">
+                    <td>{{ c.id }}</td>
+                    <td>
+                        {% if c.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-warning">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.company_name }}</td>
+                    <td>{{ c.email }}</td>
+                    <td>{{ c.mobile }}</td>
+                    <td>{{ c.trn }}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-info view-customer" data-id="{{ c.id }}" title="View Customer">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-primary edit-customer" data-id="{{ c.id }}" title="Edit Customer">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            
+                            {% if c.is_active %}
+                                <!-- Active Customer: Show Deactivate button -->
+                                <button class="btn btn-warning deactivate-customer" data-id="{{ c.id }}" title="Deactivate Customer">
+                                    <i class="bi bi-person-dash"></i> Deactivate
+                                </button>
+                            {% else %}
+                                <!-- Inactive Customer: Show Activate and Delete buttons -->
+                                <button class="btn btn-success activate-customer" data-id="{{ c.id }}" title="Activate Customer">
+                                    <i class="bi bi-person-check"></i> Activate
+                                </button>
+                                <button class="btn btn-danger delete-customer" data-id="{{ c.id }}" title="Delete Customer Permanently">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Show message if no customers found -->
+    {% if not customers %}
+    <div class="alert alert-info">
+        {% if current_filter == 'active' %}
+            No active customers found.
+        {% elif current_filter == 'inactive' %}
+            No inactive customers found.
+        {% else %}
+            No customers found.
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="editCustomerForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Customer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" name="customer_id" id="editCustomerId">
+
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <label class="form-label">Company Name <span class="text-danger">*</span></label>
+                    <input type="text" name="company_name" id="editCompanyName" class="form-control" placeholder="Company Name" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" id="editEmail" class="form-control" placeholder="Email">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Mobile</label>
+                    <input type="text" name="mobile" id="editMobile" class="form-control" placeholder="Mobile">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" id="editPhone" class="form-control" placeholder="Phone">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Trade License Number <span class="text-danger">*</span></label>
+                    <input type="text" name="trade_license_number" id="editTradeLicense" class="form-control" placeholder="Trade License Number" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">TRN <span class="text-danger">*</span></label>
+                    <input type="text" name="trn" id="editTRN" class="form-control" placeholder="TRN" required pattern="\d{15}" maxlength="15" minlength="15">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Legal Form</label>
+                    <input type="text" name="legal_form" id="editLegalForm" class="form-control" placeholder="Legal Form">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" name="contact_person" id="editContactPerson" class="form-control" placeholder="Contact Person">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Contact Designation</label>
+                    <input type="text" name="contact_designation" id="editContactDesignation" class="form-control" placeholder="Contact Designation">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Address</label>
+                    <input type="text" name="address" id="editAddress" class="form-control" placeholder="Address">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Emirate</label>
+                    <input type="text" name="emirate" id="editEmirate" class="form-control" placeholder="Emirate">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">City</label>
+                    <input type="text" name="city" id="editCity" class="form-control" placeholder="City">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">PO Box</label>
+                    <input type="text" name="po_box" id="editPOBox" class="form-control" placeholder="PO Box">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Business Activities</label>
+                    <input type="text" name="business_activities" id="editBusinessActivities" class="form-control" placeholder="Business Activities">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Industry Type</label>
+                    <input type="text" name="industry_type" id="editIndustryType" class="form-control" placeholder="Industry Type">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Credit Limit</label>
+                    <input type="number" step="0.01" name="credit_limit" id="editCreditLimit" class="form-control" placeholder="Credit Limit" min="0">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Payment Terms</label>
+                    <select name="payment_terms" id="editPaymentTerms" class="form-control">
+                      <option value="NET15">NET 15</option>
+                      <option value="NET30" selected>NET 30</option>
+                      <option value="NET45">NET 45</option>
+                      <option value="NET60">NET 60</option>
+                      <option value="Due on receipt">Due on receipt</option>
+                    </select>
+                </div>
+                <!-- Added is_active field -->
+                <div class="col-md-12">
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="editIsActive">
+                        <label class="form-check-label" for="editIsActive">
+                            Active Customer
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary" id="editCustomerSubmit">
+            <span class="submit-text">Save Changes</span>
+            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- View Customer Modal -->
+<div class="modal fade" id="viewCustomerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Customer Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="viewCustomerContent">
+          <!-- Customer details will be loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="d-none position-fixed top-50 start-50 translate-middle">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Utility functions
+function showLoading(button, text = 'Loading...') {
+    if (button) {
+        const spinner = button.querySelector('.spinner-border');
+        const submitText = button.querySelector('.submit-text');
+        
+        if (spinner) spinner.classList.remove('d-none');
+        if (submitText) submitText.textContent = text;
+        button.disabled = true;
+    }
+}
+
+function hideLoading(button, originalText = 'Save') {
+    if (button) {
+        const spinner = button.querySelector('.spinner-border');
+        const submitText = button.querySelector('.submit-text');
+        
+        if (spinner) spinner.classList.add('d-none');
+        if (submitText) submitText.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+function showGlobalLoading() {
+    document.getElementById('loadingSpinner').classList.remove('d-none');
+}
+
+function hideGlobalLoading() {
+    document.getElementById('loadingSpinner').classList.add('d-none');
+}
+
+function showToast(message, type = 'success') {
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'position-fixed top-0 end-0 p-3';
+    toastContainer.style.zIndex = '9999';
+    
+    const bgClass = type === 'success' ? 'text-bg-success' : 'text-bg-danger';
+    
+    toastContainer.innerHTML = `
+        <div class="toast align-items-center ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toastContainer);
+    const toast = new bootstrap.Toast(toastContainer.querySelector('.toast'));
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastContainer.querySelector('.toast').addEventListener('hidden.bs.toast', () => {
+        toastContainer.remove();
+    });
+}
+
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+// Search functionality
+function setupSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#customersTable tbody tr');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const companyName = row.cells[2].textContent.toLowerCase();
+            const email = row.cells[3].textContent.toLowerCase();
+            const mobile = row.cells[4].textContent.toLowerCase();
+            const trn = row.cells[5].textContent.toLowerCase();
+            
+            const matches = companyName.includes(searchTerm) || 
+                           email.includes(searchTerm) || 
+                           mobile.includes(searchTerm) ||
+                           trn.includes(searchTerm);
+            
+            row.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+        
+        // Show/hide no results message
+        const noResultsRow = document.getElementById('noResultsRow');
+        if (visibleCount === 0 && searchTerm) {
+            if (!noResultsRow) {
+                const newRow = document.createElement('tr');
+                newRow.id = 'noResultsRow';
+                newRow.innerHTML = `<td colspan="7" class="text-center text-muted py-4">No customers found matching "${searchTerm}"</td>`;
+                document.querySelector('#customersTable tbody').appendChild(newRow);
+            }
+        } else if (noResultsRow) {
+            noResultsRow.remove();
+        }
+    });
+}
+
+// Form validation
+function setupFormValidation() {
+    // Add customer form validation
+    const addCustomerForm = document.getElementById('addCustomerForm');
+    if (addCustomerForm) {
+        addCustomerForm.addEventListener('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            this.classList.add('was-validated');
+        });
+    }
+
+    // Edit customer form validation
+    const editCustomerForm = document.getElementById('editCustomerForm');
+    if (editCustomerForm) {
+        editCustomerForm.addEventListener('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            this.classList.add('was-validated');
+        });
+    }
+}
+
+// Customer operations
+function setupCustomerOperations() {
+    // Add Customer
+    const addCustomerForm = document.getElementById('addCustomerForm');
+    if (addCustomerForm) {
+        addCustomerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitButton = document.getElementById('addCustomerSubmit');
+            
+            if (!addCustomerForm.checkValidity()) {
+                addCustomerForm.classList.add('was-validated');
+                return;
+            }
+
+            showLoading(submitButton, 'Saving...');
+            
+            try {
+                const formData = new FormData(addCustomerForm);
+                
+                const response = await fetch('/accounts/customers', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': getCSRFToken()
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    addCustomerForm.reset();
+                    addCustomerForm.classList.remove('was-validated');
+                    
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addCustomerModal'));
+                    modal.hide();
+                    
+                    // Reload page after delay
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Add customer error:', error);
+                showToast('Unexpected error adding customer', 'error');
+            } finally {
+                hideLoading(submitButton, 'Save Customer');
+            }
+        });
+    }
+
+    // View Customer
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('.view-customer')) {
+            const button = e.target.closest('.view-customer');
+            const customerId = button.getAttribute('data-id');
+            
+            showGlobalLoading();
+            
+            try {
+                const response = await fetch(`/accounts/customers/${customerId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const customer = result.customer;
+                    const customerDetails = `
+                        <div class="row">
+                            <div class="col-md-6"><strong>Company Name:</strong></div>
+                            <div class="col-md-6">${customer.company_name || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>TRN:</strong></div>
+                            <div class="col-md-6">${customer.trn || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Trade License:</strong></div>
+                            <div class="col-md-6">${customer.trade_license_number || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Email:</strong></div>
+                            <div class="col-md-6">${customer.email || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Mobile:</strong></div>
+                            <div class="col-md-6">${customer.mobile || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Phone:</strong></div>
+                            <div class="col-md-6">${customer.phone || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Contact Person:</strong></div>
+                            <div class="col-md-6">${customer.contact_person || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Contact Designation:</strong></div>
+                            <div class="col-md-6">${customer.contact_designation || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Legal Form:</strong></div>
+                            <div class="col-md-6">${customer.legal_form || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Status:</strong></div>
+                            <div class="col-md-6">
+                                ${customer.is_active ? 
+                                    '<span class="badge bg-success">Active</span>' : 
+                                    '<span class="badge bg-warning">Inactive</span>'}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row mt-2">
+                            <div class="col-md-12"><strong>Address:</strong></div>
+                            <div class="col-md-12">${customer.address || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-4"><strong>City:</strong> ${customer.city || 'N/A'}</div>
+                            <div class="col-md-4"><strong>Emirate:</strong> ${customer.emirate || 'N/A'}</div>
+                            <div class="col-md-4"><strong>PO Box:</strong> ${customer.po_box || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Business Activities:</strong> ${customer.business_activities || 'N/A'}</div>
+                            <div class="col-md-6"><strong>Industry Type:</strong> ${customer.industry_type || 'N/A'}</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6"><strong>Credit Limit:</strong> ${customer.credit_limit || '0'}</div>
+                            <div class="col-md-6"><strong>Payment Terms:</strong> ${customer.payment_terms || 'NET30'}</div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('viewCustomerContent').innerHTML = customerDetails;
+                    const viewModal = new bootstrap.Modal(document.getElementById('viewCustomerModal'));
+                    viewModal.show();
+                } else {
+                    showToast('Error loading customer: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error loading customer data', 'error');
+            } finally {
+                hideGlobalLoading();
+            }
+        }
+    });
+
+    // Edit Customer - Load data
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('.edit-customer')) {
+            const button = e.target.closest('.edit-customer');
+            const customerId = button.getAttribute('data-id');
+            
+            showGlobalLoading();
+            
+            try {
+                const response = await fetch(`/accounts/customers/${customerId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const customer = result.customer;
+                    
+                    // Populate form fields
+                    document.getElementById('editCustomerId').value = customer.id;
+                    document.getElementById('editCompanyName').value = customer.company_name || '';
+                    document.getElementById('editEmail').value = customer.email || '';
+                    document.getElementById('editMobile').value = customer.mobile || '';
+                    document.getElementById('editPhone').value = customer.phone || '';
+                    document.getElementById('editTradeLicense').value = customer.trade_license_number || '';
+                    document.getElementById('editTRN').value = customer.trn || '';
+                    document.getElementById('editLegalForm').value = customer.legal_form || '';
+                    document.getElementById('editContactPerson').value = customer.contact_person || '';
+                    document.getElementById('editContactDesignation').value = customer.contact_designation || '';
+                    document.getElementById('editAddress').value = customer.address || '';
+                    document.getElementById('editEmirate').value = customer.emirate || '';
+                    document.getElementById('editCity').value = customer.city || '';
+                    document.getElementById('editPOBox').value = customer.po_box || '';
+                    document.getElementById('editBusinessActivities').value = customer.business_activities || '';
+                    document.getElementById('editIndustryType').value = customer.industry_type || '';
+                    document.getElementById('editCreditLimit').value = customer.credit_limit || '';
+                    document.getElementById('editPaymentTerms').value = customer.payment_terms || 'NET30';
+                    document.getElementById('editIsActive').checked = customer.is_active || false;
+                    
+                    const editModal = new bootstrap.Modal(document.getElementById('editCustomerModal'));
+                    editModal.show();
+                } else {
+                    showToast('Error loading customer: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error loading customer data', 'error');
+            } finally {
+                hideGlobalLoading();
+            }
+        }
+    });
+
+    // Edit Customer - Submit
+    const editCustomerForm = document.getElementById('editCustomerForm');
+    if (editCustomerForm) {
+        editCustomerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitButton = document.getElementById('editCustomerSubmit');
+            
+            if (!editCustomerForm.checkValidity()) {
+                editCustomerForm.classList.add('was-validated');
+                return;
+            }
+
+            showLoading(submitButton, 'Saving...');
+            
+            try {
+                const customerId = document.getElementById('editCustomerId').value;
+                const formData = new FormData(editCustomerForm);
+                
+                const response = await fetch(`/accounts/customers/${customerId}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-Token': getCSRFToken()
+                    },
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editCustomerModal'));
+                    modal.hide();
+                    
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast(result.message, 'error');
+                editCustomerForm.classList.add('was-validated');
+                // Scroll to top to show error
+                editCustomerForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Focus on first error field if possible
+                const firstInvalid = editCustomerForm.querySelector(':invalid');
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                }
+            }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error updating customer', 'error');
+            } finally {
+                hideLoading(submitButton, 'Save Changes');
+            }
+        });
+    }
+
+    // Deactivate Customer
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('.deactivate-customer')) {
+            const button = e.target.closest('.deactivate-customer');
+            const customerId = button.getAttribute('data-id');
+            
+            if (confirm('Are you sure you want to deactivate this customer? The customer will be moved to inactive status and can be activated later.')) {
+                showGlobalLoading();
+                
+                try {
+                    const response = await fetch(`/accounts/customers/${customerId}/deactivate`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-Token': getCSRFToken()
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(result.message, 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        showToast(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Error deactivating customer', 'error');
+                } finally {
+                    hideGlobalLoading();
+                }
+            }
+        }
+    });
+
+    // Activate Customer
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('.activate-customer')) {
+            const button = e.target.closest('.activate-customer');
+            const customerId = button.getAttribute('data-id');
+            
+            if (confirm('Are you sure you want to activate this customer?')) {
+                showGlobalLoading();
+                
+                try {
+                    const response = await fetch(`/accounts/customers/${customerId}/activate`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-Token': getCSRFToken()
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(result.message, 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        showToast(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Error activating customer', 'error');
+                } finally {
+                    hideGlobalLoading();
+                }
+            }
+        }
+    });
+
+    // Delete Customer
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('.delete-customer')) {
+            const button = e.target.closest('.delete-customer');
+            const customerId = button.getAttribute('data-id');
+            
+            if (confirm('⚠️ FINAL WARNING: This will permanently delete the customer and all associated data. This action cannot be undone! Are you sure you want to proceed?')) {
+                showGlobalLoading();
+                
+                try {
+                    const response = await fetch(`/accounts/customers/${customerId}/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-Token': getCSRFToken()
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast(result.message, 'success');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        showToast(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Error deleting customer', 'error');
+                } finally {
+                    hideGlobalLoading();
+                }
+            }
+        }
+    });
+}
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    setupSearch();
+    setupFormValidation();
+    setupCustomerOperations();
+    
+    // Clear form validation when modals are hidden
+    const addCustomerModal = document.getElementById('addCustomerModal');
+    if (addCustomerModal) {
+        addCustomerModal.addEventListener('hidden.bs.modal', () => {
+            const form = document.getElementById('addCustomerForm');
+            if (form) {
+                form.classList.remove('was-validated');
+            }
+        });
+    }
+    
+    const editCustomerModal = document.getElementById('editCustomerModal');
+    if (editCustomerModal) {
+        editCustomerModal.addEventListener('hidden.bs.modal', () => {
+            const form = document.getElementById('editCustomerForm');
+            if (form) {
+                form.classList.remove('was-validated');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

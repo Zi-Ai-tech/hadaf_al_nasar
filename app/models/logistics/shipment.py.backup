@@ -1,0 +1,727 @@
+from app import db
+from app.models.core.base import BaseModel, SoftDeleteMixin
+from app.constants import ShipmentStatus
+from datetime import datetime
+from sqlalchemy.orm import relationship, validates
+from sqlalchemy import event
+import re
+
+from app.models.core.user import User
+class Shipment(BaseModel, SoftDeleteMixin):
+    """
+    Shipment model for logistics and transportation operations
+    Manages the complete lifecycle of shipments from pickup to delivery
+    """
+    __tablename__ = 'shipment'
+    
+    # Shipment Identification
+    tracking_number = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    reference_number = db.Column(db.String(100), nullable=True, index=True)  # Customer reference
+    shipment_type = db.Column(db.String(50), default='general', nullable=False)  # general, express, fragile, hazardous, refrigerated
+    
+    # Origin and Destination
+    origin_address = db.Column(db.Text, nullable=False)
+    origin_city = db.Column(db.String(50), nullable=False)
+    origin_emirate = db.Column(db.String(50), nullable=False)
+    origin_country = db.Column(db.String(50), default='UAE', nullable=False)
+    origin_contact_name = db.Column(db.String(100), nullable=True)
+    origin_contact_phone = db.Column(db.String(20), nullable=True)
+    
+    destination_address = db.Column(db.Text, nullable=False)
+    destination_city = db.Column(db.String(50), nullable=False)
+    destination_emirate = db.Column(db.String(50), nullable=False)
+    destination_country = db.Column(db.String(50), default='UAE', nullable=False)
+    destination_contact_name = db.Column(db.String(100), nullable=True)
+    destination_contact_phone = db.Column(db.String(20), nullable=True)
+    
+    # Dates and Timing
+    pickup_date = db.Column(db.DateTime, nullable=True)
+    estimated_pickup_date = db.Column(db.DateTime, nullable=False)
+    delivery_date = db.Column(db.DateTime, nullable=True)
+    estimated_delivery_date = db.Column(db.DateTime, nullable=False)
+    actual_delivery_date = db.Column(db.DateTime, nullable=True)
+    
+    # Shipment Details
+    status = db.Column(db.Enum(ShipmentStatus), default=ShipmentStatus.PENDING, nullable=False)
+    priority = db.Column(db.String(20), default='normal')  # low, normal, high, urgent
+    weight = db.Column(db.Float, nullable=True)  # in kg
+    volume = db.Column(db.Float, nullable=True)  # in cubic meters
+    dimensions = db.Column(db.String(100), nullable=True)  # LxWxH in cm
+    pieces = db.Column(db.Integer, default=1, nullable=False)
+    declared_value = db.Column(db.Float, default=0.0, nullable=False)  # Value of goods for insurance
+    
+    # Cargo Information
+    cargo_description = db.Column(db.Text, nullable=True)
+    cargo_type = db.Column(db.String(100), nullable=True)  # electronics, furniture, documents, etc.
+    hazardous_material = db.Column(db.Boolean, default=False, nullable=False)
+    hazardous_class = db.Column(db.String(50), nullable=True)
+    temperature_controlled = db.Column(db.Boolean, default=False, nullable=False)
+    temperature_range = db.Column(db.String(20), nullable=True)  # e.g., "2-8°C"
+    
+    # Special Instructions
+    special_instructions = db.Column(db.Text, nullable=True)
+    handling_instructions = db.Column(db.Text, nullable=True)
+    customs_information = db.Column(db.Text, nullable=True)
+    
+    # Financial Information
+    shipping_cost = db.Column(db.Float, default=0.0, nullable=False)
+    additional_charges = db.Column(db.Float, default=0.0, nullable=False)
+    discount = db.Column(db.Float, default=0.0, nullable=False)
+    total_cost = db.Column(db.Float, default=0.0, nullable=False)
+    payment_terms = db.Column(db.String(50), default='prepaid')  # prepaid, collect, credit
+    
+    # Distance and Route
+    distance_km = db.Column(db.Float, nullable=True)
+    estimated_duration_minutes = db.Column(db.Integer, nullable=True)
+    route_optimized = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Foreign Keys
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'), nullable=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
+    
+    customer = relationship('customer.Customer', backref='customer_shipments')
+    driver = relationship('driver.Driver', backref='driver_shipments') 
+    vehicle = relationship('vehicle.Vehicle', backref='vehicle_shipments')
+    status_history = relationship('app.models.logistics.shipment.ShipmentStatusHistory', backref='shipment_status_history', 
+                            cascade='all, delete-orphan', lazy=True)
+    assignments = relationship('app.models.logistics.shipment.DriverAssignment', backref='shipment_assignment', 
+                         cascade='all, delete-orphan', lazy=True)
+    documents = relationship('app.models.logistics.shipment.ShipmentDocument', backref='shipment_document', 
+                       cascade='all, delete-orphan', lazy=True)
+    invoices = relationship('invoice.Invoice', backref='shipment_invoice', lazy=True)
+    
+    def __init__(self, **kwargs):
+        """
+        Initialize shipment with automatic tracking number generation and calculations
+        """
+        if 'tracking_number' not in kwargs:
+            kwargs['tracking_number'] = self.generate_tracking_number()
+        
+        # Calculate total cost if not provided
+        if 'total_cost' not in kwargs and 'shipping_cost' in kwargs:
+            shipping_cost = kwargs.get('shipping_cost', 0)
+            additional_charges = kwargs.get('additional_charges', 0)
+            discount = kwargs.get('discount', 0)
+            kwargs['total_cost'] = shipping_cost + additional_charges - discount
+        
+        super().__init__(**kwargs)
+    
+    @validates('tracking_number')
+    def validate_tracking_number(self, key, tracking_number):
+        """Validate tracking number uniqueness"""
+        if not tracking_number:
+            raise ValueError("Tracking number cannot be empty")
+        
+        # Check if tracking number already exists (excluding current instance)
+        existing = Shipment.query.filter_by(tracking_number=tracking_number).first()
+        if existing and existing.id != getattr(self, 'id', None):
+            raise ValueError("Tracking number must be unique")
+        
+        return tracking_number
+    
+    @validates('weight')
+    def validate_weight(self, key, weight):
+        """Validate weight is positive"""
+        if weight is not None and weight <= 0:
+            raise ValueError("Weight must be positive")
+        return weight
+    
+    @property
+    def is_active(self):
+        """Check if shipment is active (not delivered or cancelled)"""
+        return self.status not in [ShipmentStatus.DELIVERED, ShipmentStatus.CANCELLED]
+    
+    @property
+    def is_delivered(self):
+        """Check if shipment is delivered"""
+        return self.status == ShipmentStatus.DELIVERED
+    
+    @property
+    def is_in_transit(self):
+        """Check if shipment is in transit"""
+        return self.status == ShipmentStatus.IN_TRANSIT
+    
+    @property
+    def is_picked_up(self):
+        """Check if shipment is picked up"""
+        return self.status == ShipmentStatus.PICKED_UP
+    
+    @property
+    def is_delayed(self):
+        """Check if shipment is delayed"""
+        if (self.estimated_delivery_date and 
+            datetime.utcnow() > self.estimated_delivery_date and 
+            self.status not in [ShipmentStatus.DELIVERED, ShipmentStatus.CANCELLED]):
+            return True
+        return False
+    
+    @property
+    def days_late(self):
+        """Calculate number of days late"""
+        if self.is_delayed and self.estimated_delivery_date:
+            return (datetime.utcnow() - self.estimated_delivery_date).days
+        return 0
+    
+    @property
+    def transit_time_days(self):
+        """Calculate actual or estimated transit time in days"""
+        if self.delivery_date and self.pickup_date:
+            return (self.delivery_date - self.pickup_date).days
+        elif self.pickup_date:
+            return (datetime.utcnow() - self.pickup_date).days
+        return None
+    
+    def generate_tracking_number(self):
+        """
+        Generate automatic tracking number
+        Format: HNT-YYYYMMDD-XXXX
+        """
+        from app.utils.shipment_utils import generate_tracking_number
+        return generate_tracking_number()
+    
+    def update_status(self, new_status, notes=None, location=None, user_id=None):
+        """
+        Update shipment status and create history record
+        
+        Args:
+            new_status (ShipmentStatus): New status
+            notes (str): Status change notes
+            location (str): Current location
+            user_id (int): User who changed the status
+            
+        Returns:
+            ShipmentStatusHistory: Status history record
+        """
+        if self.status == new_status:
+            return None
+        
+        old_status = self.status
+        self.status = new_status
+        
+        # Update relevant dates based on status
+        if new_status == ShipmentStatus.PICKED_UP and not self.pickup_date:
+            self.pickup_date = datetime.utcnow()
+        elif new_status == ShipmentStatus.DELIVERED and not self.delivery_date:
+            self.delivery_date = datetime.utcnow()
+            self.actual_delivery_date = datetime.utcnow()
+        
+        # Create status history record
+        status_history = ShipmentStatusHistory(
+            shipment_id=self.id,
+            old_status=old_status,
+            new_status=new_status,
+            notes=notes,
+            location=location,
+            changed_by=user_id
+        )
+        
+        db.session.add(status_history)
+        self.save()
+        
+        return status_history
+    
+    def assign_driver(self, driver_id, vehicle_id=None, assignment_notes=None, user_id=None):
+        """
+        Assign driver and vehicle to shipment
+    
+        Args:
+            driver_id (int): Driver ID to assign
+            vehicle_id (int): Optional vehicle ID to assign
+            assignment_notes (str): Assignment notes
+            user_id (int): User making the assignment
+        
+        Returns:
+            DriverAssignment: Assignment record
+        """
+        from app.models.logistics.driver import Driver
+        from app.models.logistics.vehicle import Vehicle
+    
+        driver = Driver.query.get(driver_id)
+        if not driver:
+            raise ValueError("Driver not found")
+    
+        if not driver.is_available:
+            raise ValueError("Driver is not available for assignment")
+    
+        if vehicle_id:
+            vehicle = Vehicle.query.get(vehicle_id)
+            if not vehicle or vehicle.status != 'available':
+                raise ValueError("Vehicle is not available")
+    
+        # Create assignment
+        assignment = DriverAssignment(
+            shipment_id=self.id,
+            driver_id=driver_id,
+            vehicle_id=vehicle_id,
+            assignment_date=datetime.utcnow(),
+            status='assigned',
+            notes=assignment_notes
+        )
+    
+        # Update driver and vehicle status
+        driver.status = 'assigned'
+        driver.current_vehicle_id = vehicle_id
+    
+        if vehicle_id:
+            vehicle.status = 'in_use'
+    
+        db.session.add(assignment)
+        self.driver_id = driver_id
+        self.vehicle_id = vehicle_id
+    
+        # Update shipment status to assigned
+        self.update_status(
+            ShipmentStatus.ASSIGNED,
+            notes=f"Assigned to driver {driver.name}",
+            user_id=user_id  # Now properly defined
+        )
+    
+        return assignment
+    
+    def calculate_shipping_cost(self):
+        """
+        Calculate shipping cost based on weight, distance, and other factors
+        
+        Returns:
+            float: Calculated shipping cost
+        """
+        base_rate = 50  # AED base rate
+        weight_rate = 0
+        distance_rate = 0
+        
+        # Weight-based calculation
+        if self.weight:
+            if self.weight <= 10:
+                weight_rate = self.weight * 2
+            elif self.weight <= 50:
+                weight_rate = 20 + (self.weight - 10) * 1.5
+            else:
+                weight_rate = 80 + (self.weight - 50) * 1.0
+        
+        # Distance-based calculation
+        if self.distance_km:
+            distance_rate = self.distance_km * 0.5
+        
+        # Priority surcharge
+        priority_surcharge = 0
+        if self.priority == 'high':
+            priority_surcharge = 50
+        elif self.priority == 'urgent':
+            priority_surcharge = 100
+        
+        # Special handling charges
+        special_charges = 0
+        if self.hazardous_material:
+            special_charges += 200
+        if self.temperature_controlled:
+            special_charges += 150
+        
+        total_cost = base_rate + weight_rate + distance_rate + priority_surcharge + special_charges
+        
+        # Update shipment cost
+        self.shipping_cost = total_cost
+        self.total_cost = total_cost + self.additional_charges - self.discount
+        
+        return total_cost
+    
+    def add_document(self, document_type, document_url, description=None, expiry_date=None):
+        """
+        Add document to shipment
+        
+        Args:
+            document_type (str): Type of document
+            document_url (str): URL to document file
+            description (str): Document description
+            expiry_date (datetime): Document expiry date
+            
+        Returns:
+            ShipmentDocument: Created document record
+        """
+        document = ShipmentDocument(
+            shipment_id=self.id,
+            document_type=document_type,
+            document_url=document_url,
+            description=description,
+            expiry_date=expiry_date
+        )
+        
+        self.documents.append(document)
+        self.save()
+        
+        return document
+    
+    def get_current_location(self):
+        """
+        Get current location from latest status update
+        
+        Returns:
+            str: Current location or None
+        """
+        latest_status = ShipmentStatusHistory.query.filter_by(
+            shipment_id=self.id
+        ).order_by(ShipmentStatusHistory.created_at.desc()).first()
+        
+        return latest_status.location if latest_status else None
+    
+    def get_estimated_time_remaining(self):
+        """
+        Get estimated time remaining for delivery
+        
+        Returns:
+            str: Estimated time remaining or None
+        """
+        if self.status == ShipmentStatus.DELIVERED:
+            return "Delivered"
+        
+        if not self.estimated_delivery_date:
+            return None
+        
+        remaining = self.estimated_delivery_date - datetime.utcnow()
+        
+        if remaining.total_seconds() <= 0:
+            return "Delayed"
+        
+        days = remaining.days
+        hours = remaining.seconds // 3600
+        
+        if days > 0:
+            return f"{days}d {hours}h"
+        else:
+            return f"{hours}h"
+    
+    def to_dict(self, include_history=False, include_documents=False, include_assignments=False):
+        """
+        Convert shipment to dictionary
+        
+        Args:
+            include_history (bool): Include status history
+            include_documents (bool): Include documents
+            include_assignments (bool): Include assignment history
+            
+        Returns:
+            dict: Shipment data
+        """
+        data = super().to_dict()
+        
+        # Add computed properties
+        data['is_active'] = self.is_active
+        data['is_delivered'] = self.is_delivered
+        data['is_in_transit'] = self.is_in_transit
+        data['is_picked_up'] = self.is_picked_up
+        data['is_delayed'] = self.is_delayed
+        data['days_late'] = self.days_late
+        data['transit_time_days'] = self.transit_time_days
+        data['current_location'] = self.get_current_location()
+        data['estimated_time_remaining'] = self.get_estimated_time_remaining()
+        
+        # Format dates
+        date_fields = [
+            'pickup_date', 'estimated_pickup_date', 'delivery_date',
+            'estimated_delivery_date', 'actual_delivery_date'
+        ]
+        
+        for field in date_fields:
+            value = getattr(self, field)
+            if value:
+                data[field] = value.isoformat()
+        
+        # Include related data
+        if self.customer:
+            data['customer_name'] = self.customer.company_name
+            data['customer_contact'] = self.customer.contact_person
+        
+        if self.driver:
+            data['driver_name'] = self.driver.name
+            data['driver_phone'] = self.driver.phone
+        
+        if self.vehicle:
+            data['vehicle_registration'] = self.vehicle.registration_number
+            data['vehicle_type'] = self.vehicle.vehicle_type
+        
+        if include_history:
+            data['status_history'] = [
+                history.to_dict() for history in self.status_history
+            ]
+        
+        if include_documents:
+            data['documents'] = [
+                document.to_dict() for document in self.documents
+            ]
+        
+        if include_assignments:
+            data['assignments'] = [
+                assignment.to_dict() for assignment in self.assignments
+            ]
+        
+        return data
+    
+    @classmethod
+    def get_by_tracking_number(cls, tracking_number):
+        """
+        Get shipment by tracking number
+        
+        Args:
+            tracking_number (str): Tracking number
+            
+        Returns:
+            Shipment: Shipment instance or None
+        """
+        return cls.query.filter_by(tracking_number=tracking_number).first()
+    
+    @classmethod
+    def get_shipments_by_status(cls, status):
+        """
+        Get shipments by status
+        
+        Args:
+            status (ShipmentStatus): Shipment status
+            
+        Returns:
+            list: List of shipments with specified status
+        """
+        return cls.query.filter_by(status=status).order_by(cls.created_at.desc()).all()
+    
+    @classmethod
+    def get_active_shipments(cls):
+        """
+        Get all active shipments (not delivered or cancelled)
+        
+        Returns:
+            list: List of active shipments
+        """
+        return cls.query.filter(
+            cls.status.notin_([ShipmentStatus.DELIVERED, ShipmentStatus.CANCELLED])
+        ).order_by(cls.priority.desc(), cls.estimated_delivery_date).all()
+    
+    @classmethod
+    def get_delayed_shipments(cls):
+        """
+        Get all delayed shipments
+        
+        Returns:
+            list: List of delayed shipments
+        """
+        return cls.query.filter(
+            cls.estimated_delivery_date < datetime.utcnow(),
+            cls.status.notin_([ShipmentStatus.DELIVERED, ShipmentStatus.CANCELLED])
+        ).order_by(cls.estimated_delivery_date).all()
+    
+    @classmethod
+    def get_shipments_by_customer(cls, customer_id, status=None):
+        """
+        Get shipments for a specific customer
+        
+        Args:
+            customer_id (int): Customer ID
+            status (ShipmentStatus): Optional status filter
+            
+        Returns:
+            list: List of customer shipments
+        """
+        query = cls.query.filter_by(customer_id=customer_id)
+        if status:
+            query = query.filter_by(status=status)
+        return query.order_by(cls.created_at.desc()).all()
+    
+    @classmethod
+    def get_shipment_metrics(cls, start_date, end_date):
+        """
+        Get shipment metrics for a date range
+        
+        Args:
+            start_date (datetime): Start date
+            end_date (datetime): End date
+            
+        Returns:
+            dict: Shipment metrics
+        """
+        shipments = cls.query.filter(
+            cls.created_at >= start_date,
+            cls.created_at <= end_date
+        ).all()
+        
+        total_shipments = len(shipments)
+        delivered = len([s for s in shipments if s.is_delivered])
+        in_transit = len([s for s in shipments if s.is_in_transit])
+        delayed = len([s for s in shipments if s.is_delayed])
+        
+        total_revenue = sum(s.total_cost for s in shipments)
+        avg_transit_time = sum(s.transit_time_days or 0 for s in shipments if s.transit_time_days) / delivered if delivered else 0
+        
+        return {
+            'total_shipments': total_shipments,
+            'delivered': delivered,
+            'in_transit': in_transit,
+            'delayed': delayed,
+            'on_time_rate': (delivered - delayed) / delivered * 100 if delivered else 0,
+            'total_revenue': total_revenue,
+            'average_transit_time_days': avg_transit_time,
+            'period': {
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat()
+            }
+        }
+    
+    def __repr__(self):
+        return f'<Shipment {self.tracking_number} - {self.status.value}>'
+
+
+class ShipmentStatusHistory(BaseModel):
+    """
+    Track shipment status changes for audit and tracking
+    """
+    __tablename__ = 'shipment_status_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    shipment_id = db.Column(db.Integer, db.ForeignKey('shipment.id'), nullable=False)
+    old_status = db.Column(db.Enum(ShipmentStatus), nullable=True)
+    new_status = db.Column(db.Enum(ShipmentStatus), nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    location = db.Column(db.String(100), nullable=True)
+    changed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # FIXED: Use string reference and viewonly to avoid circular imports
+    status_changer = relationship(lambda: User, backref='status_changes_made', foreign_keys=[changed_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'shipment_id': self.shipment_id,
+            'old_status': self.old_status.value if self.old_status else None,
+            'new_status': self.new_status.value,
+            'notes': self.notes,
+            'location': self.location,
+            'changed_by': self.changed_by,
+            'created_at': self.created_at.isoformat()
+        }
+    
+    def __repr__(self):
+        return f'<ShipmentStatusHistory {self.shipment_id} - {self.old_status} -> {self.new_status}>'
+
+
+class DriverAssignment(BaseModel):
+    """
+    Track driver assignments to shipments
+    """
+    __tablename__ = 'driver_assignment'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    shipment_id = db.Column(db.Integer, db.ForeignKey('shipment.id'), nullable=False)
+    driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'), nullable=False)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
+    assignment_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    completion_date = db.Column(db.DateTime, nullable=True)
+    status = db.Column(db.String(20), default='assigned', nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    completion_notes = db.Column(db.Text, nullable=True)
+    rating = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # FIXED: Use string references to avoid import issues
+    # customer = relationship('customer.Customer', backref='shipments_ref')
+    driver = relationship('driver.Driver', backref='shipments_ref')
+    vehicle = relationship('vehicle.Vehicle', backref='shipments_ref')
+    
+    # Comment out all other relationships temporarily
+    # status_history = relationship('app.models.logistics.shipment.ShipmentStatusHistory', backref='shipment_status_history')
+    # assignments = relationship('app.models.logistics.shipment.DriverAssignment', backref='shipment_assignments')
+    # documents = relationship('app.models.logistics.shipment.ShipmentDocument', backref='shipment_documents')
+    # invoices = relationship('invoice.Invoice', backref='shipment_invoices')
+    
+    @property
+    def is_completed(self):
+        """Check if assignment is completed"""
+        return self.status == 'completed'
+    
+    @property
+    def assignment_duration_hours(self):
+        """Calculate assignment duration in hours"""
+        if self.completion_date and self.assignment_date:
+            return (self.completion_date - self.assignment_date).total_seconds() / 3600
+        return None
+    
+    def to_dict(self):
+        """Convert assignment to dictionary"""
+        data = {
+            'id': self.id,
+            'shipment_id': self.shipment_id,
+            'driver_id': self.driver_id,
+            'vehicle_id': self.vehicle_id,
+            'assignment_date': self.assignment_date.isoformat(),
+            'completion_date': self.completion_date.isoformat() if self.completion_date else None,
+            'status': self.status,
+            'notes': self.notes,
+            'completion_notes': self.completion_notes,
+            'rating': self.rating,
+            'is_completed': self.is_completed,
+            'assignment_duration_hours': self.assignment_duration_hours,
+            'created_at': self.created_at.isoformat()
+        }
+        
+        return data
+    
+    def __repr__(self):
+        return f'<DriverAssignment {self.id}>'
+
+
+class ShipmentDocument(BaseModel):
+    """
+    Manage shipment-related documents
+    """
+    __tablename__ = 'shipment_document'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    shipment_id = db.Column(db.Integer, db.ForeignKey('shipment.id'), nullable=False)
+    document_type = db.Column(db.String(50), nullable=False)  # invoice, pod, customs, license, insurance
+    document_url = db.Column(db.String(500), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    expiry_date = db.Column(db.DateTime, nullable=True)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    document_uploader = relationship(lambda: User, backref='document_uploaded', foreign_keys=[uploaded_by])
+    
+    @property
+    def is_expired(self):
+        """Check if document is expired"""
+        if self.expiry_date:
+            return datetime.utcnow() > self.expiry_date
+        return False
+    
+    def to_dict(self):
+        """Convert document to dictionary"""
+        return {
+            'id': self.id,
+            'shipment_id': self.shipment_id,
+            'document_type': self.document_type,
+            'document_url': self.document_url,
+            'description': self.description,
+            'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
+            'is_expired': self.is_expired,
+            'uploaded_by_name': self.document_uploader.full_name if self.document_uploader else None,
+            'created_at': self.created_at.isoformat()
+        }
+    
+    def __repr__(self):
+        return f'<ShipmentDocument {self.document_type} for {self.shipment.tracking_number}>'
+
+
+# Event listeners for automatic actions
+@event.listens_for(Shipment.status, 'set')
+def status_change_listener(target, value, oldvalue, initiator):
+    """
+    Automatically trigger actions when shipment status changes
+    """
+    if oldvalue == value:
+        return
+    
+    # You can add automatic actions here, such as:
+    # - Sending notifications to customers
+    # - Updating related records
+    # - Triggering workflows
+    
+    # Example: Log status change (actual logging happens in update_status method)
+    pass

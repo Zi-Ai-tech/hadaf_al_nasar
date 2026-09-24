@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Salary - Hadaf Al Nasar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid var(--light-gray);
+            padding: 15px 20px;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            padding: 10px 20px;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            border-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            border-color: var(--success);
+            border-radius: var(--border-radius);
+            font-weight: 600;
+        }
+        
+        .btn-success:hover {
+            background-color: #3aa8d0;
+            border-color: #3aa8d0;
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            border-color: var(--danger);
+            border-radius: var(--border-radius);
+            font-weight: 600;
+        }
+        
+        .btn-danger:hover {
+            background-color: #e1156d;
+            border-color: #e1156d;
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .btn-secondary {
+            background-color: var(--gray);
+            border-color: var(--gray);
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            padding: 10px 20px;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .btn-outline-secondary {
+            color: var(--gray);
+            border-color: var(--gray);
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: var(--gray);
+            border-color: var(--gray);
+            color: white;
+        }
+        
+        .page-header {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--light-gray);
+            margin-bottom: 25px;
+        }
+        
+        .page-title {
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .employee-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            border-left: 4px solid var(--success);
+            margin-bottom: 20px;
+        }
+        
+        .employee-info strong {
+            color: var(--dark);
+        }
+        
+        .salary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .salary-table th {
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--light-gray);
+            color: var(--gray);
+            font-weight: 500;
+        }
+        
+        .salary-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .salary-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .net-salary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: rgba(67, 97, 238, 0.1);
+            border-radius: var(--border-radius);
+            margin-top: 20px;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        .amount {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-paid {
+            background-color: rgba(76, 201, 240, 0.2);
+            color: var(--success);
+        }
+        
+        .badge-processing {
+            background-color: rgba(248, 150, 30, 0.2);
+            color: var(--warning);
+        }
+        
+        .badge-pending {
+            background-color: rgba(108, 117, 125, 0.2);
+            color: var(--gray);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .salary-slip {
+            background-color: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        
+        .slip-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .slip-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+        
+        .slip-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .slip-section {
+            margin-bottom: 25px;
+        }
+        
+        .slip-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .slip-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .slip-table th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--light-gray);
+            font-weight: 600;
+            color: var(--gray);
+        }
+        
+        .slip-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .slip-table .amount {
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .slip-total {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .slip-footer {
+            margin-top: 30px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid var(--light-gray);
+            color: var(--gray);
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .slip-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Main content -->
+            <main class="col-12 main-content p-4">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h1 class="page-title">
+                            <i class="fas fa-file-invoice me-2"></i>Salary Details
+                        </h1>
+                        <div class="btn-toolbar">
+                            <a href="{{ url_for('salary.salaries') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i> Back to Salaries
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' if category == 'info' else 'exclamation-circle' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Employee Information -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-user me-2"></i>Employee Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="employee-info">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Employee:</strong> {{ salary.employee.name }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Position:</strong> {{ salary.employee.position }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Department:</strong> {{ salary.employee.department }}
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-4">
+                                    <strong>Period:</strong> {{ salary.month }}/{{ salary.year }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Status:</strong> 
+                                    <span class="status-badge {% if salary.status.value == 'paid' %}badge-paid{% elif salary.status.value == 'processing' %}badge-processing{% else %}badge-pending{% endif %}">
+                                        <i class="fas fa-{{ 'check-circle' if salary.status.value == 'paid' else 'spinner' if salary.status.value == 'processing' else 'clock' }} me-1"></i>
+                                        {{ salary.status.value|upper }}
+                                    </span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Payment Date:</strong> {{ salary.payment_date.strftime('%Y-%m-%d') if salary.payment_date else 'Not Paid' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary Breakdown -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-calculator me-2"></i>Salary Breakdown
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="salary-table">
+                            <tr>
+                                <th>Basic Salary:</th>
+                                <td class="amount">AED {{ "%.2f"|format(salary.basic_salary) }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding-left: 30px;">Housing Allowance:</td>
+                                <td class="amount">AED {{ "%.2f"|format(salary.housing_allowance) }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding-left: 30px;">Transportation Allowance:</td>
+                                <td class="amount">AED {{ "%.2f"|format(salary.transportation_allowance) }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding-left: 30px;">Other Allowances:</td>
+                                <td class="amount">AED {{ "%.2f"|format(salary.other_allowances) }}</td>
+                            </tr>
+                            <tr>
+                                <th>Total Allowances:</th>
+                                <td class="amount">AED {{ "%.2f"|format(salary.housing_allowance + salary.transportation_allowance + salary.other_allowances) }}</td>
+                            </tr>
+                            <tr>
+                                <th>Overtime Pay:</th>
+                                <td class="amount">AED {{ "%.2f"|format(salary.overtime_amount) }}</td>
+                            </tr>
+                            
+                            <!-- Bonuses Section -->
+                            {% if bonuses_list %}
+                            <tr>
+                                <th colspan="2" style="background-color: #f8f9fa; padding: 10px;">Bonuses</th>
+                            </tr>
+                            {% for bonus in bonuses_list %}
+                            <tr>
+                                <td style="padding-left: 30px;">{{ bonus.description }}:</td>
+                                <td class="amount">AED {{ "%.2f"|format(bonus.amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr>
+                                <th>Total Bonuses:</th>
+                                <td class="amount">AED {{ "%.2f"|format(bonuses_list|sum(attribute='amount')) }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            <!-- All Deductions Section -->
+                            {% if deductions_list or salary.tax_amount > 0 or salary.social_security_amount > 0 or salary.other_deductions > 0 %}
+                            <tr>
+                                <th colspan="2" style="background-color: #f8f9fa; padding: 10px;">Deductions</th>
+                            </tr>
+                            
+                            <!-- Individual Deductions from JSON list -->
+                            {% if deductions_list %}
+                            {% for deduction in deductions_list %}
+                            <tr>
+                                <td style="padding-left: 30px;">{{ deduction.description }}:</td>
+                                <td class="amount text-danger">- AED {{ "%.2f"|format(deduction.amount) }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                            
+                            <!-- Tax Deduction -->
+                            {% if salary.tax_amount and salary.tax_amount > 0 %}
+                            <tr>
+                                <td style="padding-left: 30px;">Tax:</td>
+                                <td class="amount text-danger">- AED {{ "%.2f"|format(salary.tax_amount) }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            <!-- Social Security Deduction -->
+                            {% if salary.social_security_amount and salary.social_security_amount > 0 %}
+                            <tr>
+                                <td style="padding-left: 30px;">Social Security:</td>
+                                <td class="amount text-danger">- AED {{ "%.2f"|format(salary.social_security_amount) }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            <!-- Other Deductions -->
+                            {% if salary.other_deductions and salary.other_deductions > 0 %}
+                            <tr>
+                                <td style="padding-left: 30px;">Other Deductions:</td>
+                                <td class="amount text-danger">- AED {{ "%.2f"|format(salary.other_deductions) }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            <!-- Total of JSON deductions -->
+                            {% if deductions_list %}
+                            <tr>
+                                <th>Listed Deductions Total:</th>
+                                <td class="amount text-danger">- AED {{ "%.2f"|format(deductions_list|sum(attribute='amount')) }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            <tr>
+                                <th>Total All Deductions:</th>
+                                <td class="amount text-danger">- AED {{ "%.2f"|format(salary.total_deductions) }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                        
+                        <!-- Salary Summary -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Earnings Summary</h6>
+                                        <table class="salary-table">
+                                            <tr>
+                                                <td>Basic Salary:</td>
+                                                <td class="amount">AED {{ "%.2f"|format(salary.basic_salary) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Total Allowances:</td>
+                                                <td class="amount">AED {{ "%.2f"|format(salary.housing_allowance + salary.transportation_allowance + salary.other_allowances) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Overtime:</td>
+                                                <td class="amount">AED {{ "%.2f"|format(salary.overtime_amount) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Bonuses:</td>
+                                                <td class="amount">AED {{ "%.2f"|format(salary.incentives_amount) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Gross Salary:</th>
+                                                <td class="amount"><strong>AED {{ "%.2f"|format(salary.gross_salary) }}</strong></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Deductions Summary</h6>
+                                        <table class="salary-table">
+                                            <tr>
+                                                <td>Listed Deductions:</td>
+                                                <td class="amount text-danger">- AED {{ "%.2f"|format(salary.deductions_amount) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Tax:</td>
+                                                <td class="amount text-danger">- AED {{ "%.2f"|format(salary.tax_amount) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Social Security:</td>
+                                                <td class="amount text-danger">- AED {{ "%.2f"|format(salary.social_security_amount) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Other Deductions:</td>
+                                                <td class="amount text-danger">- AED {{ "%.2f"|format(salary.other_deductions) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Total Deductions:</th>
+                                                <td class="amount text-danger"><strong>- AED {{ "%.2f"|format(salary.total_deductions) }}</strong></td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="net-salary">
+                            <span>Net Salary:</span>
+                            <span class="amount">AED {{ "%.2f"|format(salary.net_salary) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{{ url_for('salary.edit_salary', salary_id=salary.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i> Edit Salary
+                    </a>
+                    
+                    {% if salary.status.value != 'paid' %}
+                    <form action="{{ url_for('salary.mark_salary_paid', salary_id=salary.id) }}" method="POST" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to mark this salary as paid?')">
+                            <i class="fas fa-check me-2"></i> Mark as Paid
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <form action="{{ url_for('salary.delete_salary', salary_id=salary.id) }}" method="POST" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this salary record? This action cannot be undone.')">
+                            <i class="fas fa-trash me-2"></i> Delete Salary
+                        </button>
+                    </form>
+                    
+                    <button type="button" class="btn btn-outline-secondary" id="generateSlipBtn" data-bs-toggle="modal" data-bs-target="#salarySlipModal">
+                        <i class="fas fa-file-pdf me-2"></i> Generate Salary Slip
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Salary Slip Modal -->
+    <div class="modal fade" id="salarySlipModal" tabindex="-1" aria-labelledby="salarySlipModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="salarySlipModalLabel">
+                        <i class="fas fa-file-invoice me-2"></i>Salary Slip
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="salary-slip" id="salarySlip">
+                        <div class="slip-header">
+                            <div class="company-name">Hadaf Al Nasar</div>
+                            <div class="slip-title">SALARY SLIP</div>
+                            <div class="text-muted">Payroll Management System</div>
+                        </div>
+                        
+                        <div class="slip-details">
+                            <div>
+                                <div><strong>Employee Name:</strong> <span id="slipEmployeeName">{{ salary.employee.name }}</span></div>
+                                <div><strong>Position:</strong> <span id="slipPosition">{{ salary.employee.position }}</span></div>
+                                <div><strong>Department:</strong> <span id="slipDepartment">{{ salary.employee.department }}</span></div>
+                            </div>
+                            <div>
+                                <div><strong>Salary Period:</strong> <span id="slipPeriod">{{ salary.month }}/{{ salary.year }}</span></div>
+                                <div><strong>Payment Date:</strong> <span id="slipPaymentDate">{{ salary.payment_date.strftime('%Y-%m-%d') if salary.payment_date else 'Not Paid' }}</span></div>
+                                <div><strong>Status:</strong> <span id="slipStatus">{{ salary.status.value|upper }}</span></div>
+                            </div>
+                        </div>
+                        
+                        <div class="slip-section">
+                            <div class="slip-section-title">Earnings</div>
+                            <table class="slip-table">
+                                <tr>
+                                    <th>Description</th>
+                                    <th class="amount">Amount (AED)</th>
+                                </tr>
+                                <tr>
+                                    <td>Basic Salary</td>
+                                    <td class="amount" id="slipBasicSalary">{{ "%.2f"|format(salary.basic_salary) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Housing Allowance</td>
+                                    <td class="amount" id="slipHousingAllowance">{{ "%.2f"|format(salary.housing_allowance) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Transportation Allowance</td>
+                                    <td class="amount" id="slipTransportAllowance">{{ "%.2f"|format(salary.transportation_allowance) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Other Allowances</td>
+                                    <td class="amount" id="slipOtherAllowances">{{ "%.2f"|format(salary.other_allowances) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Overtime Pay</td>
+                                    <td class="amount" id="slipOvertime">{{ "%.2f"|format(salary.overtime_amount) }}</td>
+                                </tr>
+                                
+                                <!-- Bonuses in Salary Slip -->
+                                {% if bonuses_list %}
+                                {% for bonus in bonuses_list %}
+                                <tr>
+                                    <td>{{ bonus.description }}</td>
+                                    <td class="amount">{{ "%.2f"|format(bonus.amount) }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                                
+                                <tr>
+                                    <td><strong>Total Earnings</strong></td>
+                                    <td class="amount slip-total" id="slipTotalEarnings">
+                                        {{ "%.2f"|format(salary.gross_salary) }}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="slip-section">
+                            <div class="slip-section-title">Deductions</div>
+                            <table class="slip-table">
+                                <tr>
+                                    <th>Description</th>
+                                    <th class="amount">Amount (AED)</th>
+                                </tr>
+                                
+                                <!-- Individual Deductions in Salary Slip -->
+                                {% if deductions_list %}
+                                {% for deduction in deductions_list %}
+                                <tr>
+                                    <td>{{ deduction.description }}</td>
+                                    <td class="amount">{{ "%.2f"|format(deduction.amount) }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                                
+                                <!-- Tax Deduction -->
+                                {% if salary.tax_amount and salary.tax_amount > 0 %}
+                                <tr>
+                                    <td>Tax</td>
+                                    <td class="amount">{{ "%.2f"|format(salary.tax_amount) }}</td>
+                                </tr>
+                                {% endif %}
+                                
+                                <!-- Social Security Deduction -->
+                                {% if salary.social_security_amount and salary.social_security_amount > 0 %}
+                                <tr>
+                                    <td>Social Security</td>
+                                    <td class="amount">{{ "%.2f"|format(salary.social_security_amount) }}</td>
+                                </tr>
+                                {% endif %}
+                                
+                                <!-- Other Deductions -->
+                                {% if salary.other_deductions and salary.other_deductions > 0 %}
+                                <tr>
+                                    <td>Other Deductions</td>
+                                    <td class="amount">{{ "%.2f"|format(salary.other_deductions) }}</td>
+                                </tr>
+                                {% endif %}
+                                
+                                <tr>
+                                    <td><strong>Total Deductions</strong></td>
+                                    <td class="amount slip-total" id="slipTotalDeductions">
+                                        {{ "%.2f"|format(salary.total_deductions) }}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="slip-section">
+                            <table class="slip-table">
+                                <tr>
+                                    <td><strong>NET SALARY</strong></td>
+                                    <td class="amount slip-total" id="slipNetSalary">{{ "%.2f"|format(salary.net_salary) }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="slip-footer">
+                            <div>This is a computer-generated document and does not require a signature.</div>
+                            <div>Generated on: <span id="slipGeneratedDate"></span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i> Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="downloadPdfBtn">
+                        <i class="fas fa-download me-2"></i> Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    // Store modal instance globally
+    let salarySlipModal = null;
+
+    // Function to set current date and time
+    function setCurrentDateTime() {
+        const now = new Date();
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        const formattedDate = now.toLocaleDateString('en-US', options);
+        document.getElementById('slipGeneratedDate').textContent = formattedDate;
+    }
+
+    // Function to clean up modal backdrop
+    function cleanupModalBackdrop() {
+        // Remove any existing backdrop
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => {
+            backdrop.parentNode.removeChild(backdrop);
+        });
+        
+        // Remove modal-open class from body
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
+
+    // Handle Generate Salary Slip button
+    document.getElementById('generateSlipBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Set current date and time in the slip
+        setCurrentDateTime();
+        
+        // Clean up any existing backdrop
+        cleanupModalBackdrop();
+        
+        // Show the modal
+        const modalElement = document.getElementById('salarySlipModal');
+        salarySlipModal = new bootstrap.Modal(modalElement);
+        salarySlipModal.show();
+        
+        // Add event listener for when modal is hidden
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            cleanupModalBackdrop();
+        });
+    });
+
+    // Professional PDF generation function with proper cleanup
+    function generateProfessionalPDF() {
+        const { jsPDF } = window.jspdf;
+        const slipElement = document.getElementById('salarySlip');
+
+        // Store modal footer state
+        const modalFooter = document.querySelector('#salarySlipModal .modal-footer');
+        const originalFooterDisplay = modalFooter ? modalFooter.style.display : 'flex';
+        
+        // Hide modal footer temporarily
+        if (modalFooter) {
+            modalFooter.style.display = 'none';
+        }
+
+        // Store original styles
+        const originalStyles = {
+            backgroundColor: slipElement.style.backgroundColor,
+            width: slipElement.style.width,
+            padding: slipElement.style.padding,
+            margin: slipElement.style.margin,
+            boxShadow: slipElement.style.boxShadow,
+            position: slipElement.style.position,
+            left: slipElement.style.left,
+            top: slipElement.style.top
+        };
+
+        // Apply PDF-optimized styles
+        slipElement.style.cssText = `
+            background-color: white !important;
+            width: 800px !important;
+            padding: 50px 60px !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            z-index: 1060;
+        `;
+
+        // Force repaint
+        slipElement.offsetHeight;
+
+        html2canvas(slipElement, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            onclone: function(clonedDoc) {
+                // Enhance the cloned document for better PDF
+                const clonedSlip = clonedDoc.getElementById('salarySlip');
+                if (clonedSlip) {
+                    clonedSlip.style.cssText = `
+                        background-color: white !important;
+                        width: 800px !important;
+                        padding: 50px 60px !important;
+                        margin: 0 !important;
+                        box-shadow: none !important;
+                    `;
+            
+                    // Enhance tables for better readability
+                    const tables = clonedSlip.querySelectorAll('table');
+                    tables.forEach(table => {
+                        table.style.borderCollapse = 'collapse';
+                        table.style.width = '100%';
+                        table.style.marginBottom = '20px';
+                
+                        // Enhance table cells
+                        const cells = table.querySelectorAll('th, td');
+                        cells.forEach(cell => {
+                            cell.style.padding = '10px 12px';
+                            cell.style.border = '1px solid #ddd';
+                            cell.style.fontSize = '12px';
+                        });
+                
+                        // Enhance header cells
+                        const headers = table.querySelectorAll('th');
+                        headers.forEach(header => {
+                            header.style.backgroundColor = '#f8f9fa';
+                            header.style.fontWeight = '600';
+                        });
+                    });
+                }
+            }
+        }).then(canvas => {
+            // Restore original styles immediately
+            Object.keys(originalStyles).forEach(key => {
+                slipElement.style[key] = originalStyles[key];
+            });
+
+            // Restore modal footer
+            if (modalFooter) {
+                modalFooter.style.display = originalFooterDisplay;
+            }
+
+            // Create PDF
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4',
+                compress: true
+            });
+
+            // Calculate dimensions
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+
+            // Image dimensions with margins
+            const margin = 15; // 15mm margins
+            const imgWidth = pdfWidth - (2 * margin);
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            // Check if we need multiple pages
+            if (imgHeight <= (pdfHeight - (2 * margin))) {
+                // Single page
+                pdf.addImage(canvas, 'PNG', margin, margin, imgWidth, imgHeight);
+            } else {
+                // Multiple pages
+                let heightLeft = imgHeight;
+                let position = 0;
+                const pageHeight = pdfHeight - (2 * margin);
+        
+                pdf.addImage(canvas, 'PNG', margin, margin, imgWidth, imgHeight);
+        
+                while (heightLeft > pageHeight) {
+                    position = heightLeft - pageHeight;
+                    pdf.addPage();
+                    pdf.addImage(canvas, 'PNG', margin, margin - position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+            }
+
+            // Add header and footer to all pages
+            const pageCount = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                pdf.setPage(i);
+        
+                // Add page number
+                pdf.setFontSize(10);
+                pdf.setTextColor(100);
+                pdf.text(
+                    `Page ${i} of ${pageCount}`,
+                    pdfWidth / 2,
+                    pdfHeight - 10,
+                    { align: 'center' }
+                );
+        
+                // Add confidential watermark
+                pdf.setFontSize(40);
+                pdf.setTextColor(200, 200, 200);
+                pdf.setGState(new pdf.GState({ opacity: 0.1 }));
+                pdf.text(
+                    'CONFIDENTIAL',
+                    pdfWidth / 2,
+                    pdfHeight / 2,
+                    { align: 'center', angle: 45 }
+                );
+                pdf.setGState(new pdf.GState({ opacity: 1 }));
+            }
+
+            // Generate filename
+            const employeeName = document.getElementById('slipEmployeeName').textContent.trim();
+            const period = document.getElementById('slipPeriod').textContent.trim();
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `Salary_Slip_${employeeName.replace(/[^a-zA-Z0-9]/g, '_')}_${period.replace(/[^a-zA-Z0-9]/g, '_')}_${date}.pdf`;
+
+            // Save PDF
+            pdf.save(filename);
+            
+            // Close the modal after a short delay to allow PDF to start downloading
+            setTimeout(() => {
+                if (salarySlipModal) {
+                    salarySlipModal.hide();
+                }
+                cleanupModalBackdrop();
+            }, 500);
+
+        }).catch(error => {
+            console.error('PDF Generation Error:', error);
+            alert('Error generating PDF: ' + error.message);
+            
+            // Restore everything on error
+            Object.keys(originalStyles).forEach(key => {
+                slipElement.style[key] = originalStyles[key];
+            });
+
+            if (modalFooter) {
+                modalFooter.style.display = originalFooterDisplay;
+            }
+        });
+    }
+
+    // Update the download button to use the new function
+    document.getElementById('downloadPdfBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        generateProfessionalPDF();
+    });
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-dismiss alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        });
+        
+        // Initialize modal event listeners
+        const modalElement = document.getElementById('salarySlipModal');
+        if (modalElement) {
+            modalElement.addEventListener('show.bs.modal', function () {
+                setCurrentDateTime();
+            });
+            
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                cleanupModalBackdrop();
+            });
+        }
+    });
+</script>
+    </script>
+</body>
+</html>

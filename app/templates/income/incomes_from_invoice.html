@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Incomes from Invoice {{ invoice.invoice_number }} - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Incomes from Invoice</h1>
+                    <p class="text-muted mb-0">
+                        Invoice: <strong>{{ invoice.invoice_number }}</strong> | 
+                        Customer: <strong>{{ invoice.customer.company_name if invoice.customer else 'N/A' }}</strong> | 
+                        Total: <strong>AED {{ "%.2f"|format(invoice.total_amount) }}</strong>
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('invoices.view_invoice_details', invoice_id=invoice.id) }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Invoice
+                    </a>
+                    <a href="{{ url_for('income.incomes') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> All Incomes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Invoice Amount</h6>
+                    <h3>AED {{ "%.2f"|format(invoice.total_amount) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Income Received</h6>
+                    <h3>AED {{ "%.2f"|format(total_amount) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card {% if invoice.total_amount - total_amount > 0 %}bg-warning{% else %}bg-info{% endif %} text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Balance</h6>
+                    <h3>AED {{ "%.2f"|format(invoice.total_amount - total_amount) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incomes List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Income Records</h5>
+        </div>
+        <div class="card-body">
+            {% if incomes %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Income #</th>
+                            <th>Amount</th>
+                            <th>Tax</th>
+                            <th>Total</th>
+                            <th>Payment Method</th>
+                            <th>Reference</th>
+                            <th>Recorded By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for income in incomes %}
+                        <tr>
+                            <td>{{ income.income_date.strftime('%d/%m/%Y') }}</td>
+                            <td><strong>{{ income.income_number }}</strong></td>
+                            <td>AED {{ "%.2f"|format(income.amount) }}</td>
+                            <td>AED {{ "%.2f"|format(income.tax_amount) }}</td>
+                            <td>AED {{ "%.2f"|format(income.total_amount) }}</td>
+                            <td>{{ income.payment_method|title if income.payment_method else 'N/A' }}</td>
+                            <td>{{ income.payment_reference or 'N/A' }}</td>
+                            <td>
+                                {% if income.income_recorder %}
+                                    {{ income.income_recorder.full_name }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('income.view_income', income_id=income.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                <h4>No Income Records</h4>
+                <p class="text-muted">No income has been recorded for this invoice yet.</p>
+                <a href="{{ url_for('invoices.view_invoice_details', invoice_id=invoice.id) }}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Record Payment
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

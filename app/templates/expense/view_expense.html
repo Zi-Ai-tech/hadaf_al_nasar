@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Expense {{ expense.expense_number }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Expense {{ expense.expense_number }}</h1>
+    <div>
+        <a class="btn btn-outline-secondary" href="{{ url_for('expense.expenses') }}">Back</a>
+        <a class="btn btn-primary" href="{{ url_for('expense.edit_expense', expense_id=expense.id) }}">Edit</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9">{{ expense.description }}</dd>
+            <dt class="col-sm-3">Type</dt>
+            <dd class="col-sm-9">{{ expense.expense_type.value|replace('_', ' ')|title }}</dd>
+            <dt class="col-sm-3">Amount</dt>
+            <dd class="col-sm-9">{{ expense.currency }} {{ '%.2f'|format(expense.amount) }}</dd>
+            <dt class="col-sm-3">Tax</dt>
+            <dd class="col-sm-9">{{ expense.currency }} {{ '%.2f'|format(expense.tax_amount or 0) }}</dd>
+            <dt class="col-sm-3">Total</dt>
+            <dd class="col-sm-9">{{ expense.currency }} {{ '%.2f'|format(expense.total_amount) }}</dd>
+            <dt class="col-sm-3">Expense date</dt>
+            <dd class="col-sm-9">{{ expense.expense_date }}</dd>
+            <dt class="col-sm-3">Due date</dt>
+            <dd class="col-sm-9">{{ expense.due_date or '-' }}</dd>
+            <dt class="col-sm-3">Payment method</dt>
+            <dd class="col-sm-9">{{ expense.payment_method or '-' }}</dd>
+            <dt class="col-sm-3">Vendor</dt>
+            <dd class="col-sm-9">{{ expense.vendor_name or '-' }}</dd>
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">{{ expense.status|title }}</dd>
+            <dt class="col-sm-3">Project</dt>
+            <dd class="col-sm-9">{{ expense.project.name if expense.project else '-' }}</dd>
+            <dt class="col-sm-3">Employee</dt>
+            <dd class="col-sm-9">{{ expense.employee.name if expense.employee else '-' }}</dd>
+            <dt class="col-sm-3">Vehicle</dt>
+            <dd class="col-sm-9">{{ expense.vehicle.registration_number if expense.vehicle else '-' }}</dd>
+        </dl>
+    </div>
+</div>
+{% endblock %}

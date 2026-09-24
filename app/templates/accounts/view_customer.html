@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}View Customer - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Customer Details</h2>
+        <a href="{{ url_for('customers.customers') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Customers
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>{{ customer.company_name }}</h4>
+            {% if customer.trn_validated %}
+            <span class="badge bg-success">
+                <i class="fas fa-check-circle"></i> TRN Verified
+            </span>
+            {% endif %}
+            <span class="badge {% if customer.is_active %}bg-success{% else %}bg-danger{% endif %} ms-2">
+                {{ 'Active' if customer.is_active else 'Inactive' }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Company Information</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Company Name:</th>
+                            <td>{{ customer.company_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Trade License:</th>
+                            <td>{{ customer.trade_license_number or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>TRN:</th>
+                            <td>{{ customer.trn or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Legal Form:</th>
+                            <td>{{ customer.legal_form or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Industry:</th>
+                            <td>{{ customer.industry_type or 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5>Contact Information</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Contact Person:</th>
+                            <td>{{ customer.contact_person or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Designation:</th>
+                            <td>{{ customer.contact_designation or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ customer.email or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Phone:</th>
+                            <td>{{ customer.phone or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Mobile:</th>
+                            <td>{{ customer.mobile or 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <h5>Address Information</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Address:</th>
+                            <td>{{ customer.address or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Emirate:</th>
+                            <td>{{ customer.emirate or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>City:</th>
+                            <td>{{ customer.city or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>P.O. Box:</th>
+                            <td>{{ customer.po_box or 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5>Business Settings</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Credit Limit:</th>
+                            <td>{{ customer.credit_limit|round(2) }} AED</td>
+                        </tr>
+                        <tr>
+                            <th>Payment Terms:</th>
+                            <td>{{ customer.payment_terms or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                <span class="badge {% if customer.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Active' if customer.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Created:</th>
+                            <td>{{ customer.created_at.strftime('%Y-%m-%d') if customer.created_at else 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('customers.edit_customer', customer_id=customer.id) }}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Edit Customer
+                </a>
+                
+                {% if customer.is_active %}
+                <form method="POST" action="{{ url_for('customers.delete_customer', customer_id=customer.id) }}" 
+                      style="display: inline;" onsubmit="return confirm('Are you sure you want to deactivate this customer?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Deactivate Customer
+                    </button>
+                </form>
+                {% else %}
+                <form method="POST" action="{{ url_for('customers.activate_customer', customer_id=customer.id) }}" 
+                      style="display: inline;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Mark as Active
+                    </button>
+                </form>
+                {% endif %}
+                
+                <a href="{{ url_for('customers.customers') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

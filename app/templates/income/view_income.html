@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Invoice Income {{ income.income_number }} - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Invoice Income Details</h1>
+            <p class="text-muted mb-0">
+                {{ income.income_number }} | Invoice-based income only |
+                Company:
+                <strong>
+                    {% if income.invoice and income.invoice.customer %}
+                        {{ income.invoice.customer.company_name }}
+                    {% elif income.customer %}
+                        {{ income.customer.company_name }}
+                    {% else %}
+                        Not available
+                    {% endif %}
+                </strong>
+            </p>
+        </div>
+        <a href="{{ url_for('income.incomes') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Income Tracking
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Payment Income</h5>
+                    {% if income.status == 'received' %}
+                        <span class="badge bg-success">Payment Received</span>
+                    {% elif income.status == 'pending' %}
+                        <span class="badge bg-warning text-dark">Payment Pending</span>
+                    {% elif income.status == 'overdue' %}
+                        <span class="badge bg-danger">Payment Overdue</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ income.status|title }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Invoice</small>
+                            {% if income.invoice %}
+                                <a href="{{ url_for('invoices.view_invoice_details', invoice_id=income.invoice.id) }}">
+                                    {{ income.invoice.invoice_number }}
+                                </a>
+                            {% else %}
+                                <span>N/A</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Invoice Company</small>
+                            {% if income.invoice and income.invoice.customer %}
+                                <strong>{{ income.invoice.customer.company_name }}</strong>
+                            {% elif income.customer %}
+                                <strong>{{ income.customer.company_name }}</strong>
+                            {% else %}
+                                <span class="text-muted">Company information unavailable</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Payment Reference</small>
+                            <span>{{ income.payment_reference or income.reference_number or 'N/A' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Income Date</small>
+                            <span>{{ income.income_date.strftime('%d/%m/%Y') if income.income_date else 'N/A' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Payment Received Date</small>
+                            <span>{{ income.payment_received_date.strftime('%d/%m/%Y') if income.payment_received_date else 'N/A' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Payment Method</small>
+                            <span>{{ income.payment_method|replace('_', ' ')|title if income.payment_method else 'N/A' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Description</small>
+                            <span>{{ income.description }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Payment Amount</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Amount</span>
+                        <strong>{{ formatted_amounts.amount }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax</span>
+                        <strong>{{ formatted_amounts.tax_amount }}</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span>Total Received</span>
+                        <strong class="text-success">{{ formatted_amounts.total_amount }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Invoice Company</h5>
+                </div>
+                <div class="card-body">
+                    {% set company = income.invoice.customer if income.invoice and income.invoice.customer else income.customer %}
+                    {% if company %}
+                        <strong>{{ company.company_name }}</strong>
+                        {% if company.email %}<div>{{ company.email }}</div>{% endif %}
+                        {% if company.phone %}<div>{{ company.phone }}</div>{% endif %}
+                    {% else %}
+                        <span class="text-muted">Company information unavailable</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

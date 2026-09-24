@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Salary - Hadaf Al Nasar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid var(--light-gray);
+            padding: 15px 20px;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            padding: 10px 20px;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            border-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .btn-secondary {
+            background-color: var(--gray);
+            border-color: var(--gray);
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            padding: 10px 20px;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            padding: 10px 15px;
+            border: 1px solid var(--light-gray);
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+        
+        .page-header {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--light-gray);
+            margin-bottom: 25px;
+        }
+        
+        .page-title {
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .calculation-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .calculation-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0;
+        }
+        
+        .calculation-breakdown {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 25px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--light-gray);
+            color: var(--dark);
+        }
+        
+        .employee-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            border-left: 4px solid var(--success);
+            margin-bottom: 20px;
+        }
+        
+        .employee-info strong {
+            color: var(--dark);
+        }
+        
+        .bonus-item, .deduction-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .bonus-item input, .deduction-item input {
+            flex: 1;
+        }
+        
+        .remove-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .remove-btn:hover {
+            transform: scale(1.2);
+        }
+        
+        .add-btn {
+            background: none;
+            border: 1px dashed var(--gray);
+            color: var(--primary);
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .add-btn:hover {
+            background-color: rgba(67, 97, 238, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .bonuses-list, .deductions-list {
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .calculation-card {
+                margin-top: 20px;
+            }
+            
+            .bonus-item, .deduction-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .bonus-item input, .deduction-item input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Main content -->
+            <main class="col-12 main-content p-4">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h1 class="page-title">
+                            <i class="fas fa-edit me-2"></i>Edit Salary
+                        </h1>
+                        <div class="btn-toolbar">
+                            <a href="{{ url_for('salary.view_salary', salary_id=salary.id) }}" class="btn btn-secondary me-2">
+                                <i class="fas fa-arrow-left me-2"></i> Back to Salary
+                            </a>
+                            <a href="{{ url_for('salary.salaries') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-list me-2"></i> All Salaries
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' if category == 'info' else 'exclamation-circle' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-edit me-2"></i>Edit Salary Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Employee Information -->
+                        <div class="employee-info">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Employee:</strong> {{ salary.employee.name }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Position:</strong> {{ salary.employee.position }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Department:</strong> {{ salary.employee.department }}
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-4">
+                                    <strong>Period:</strong> {{ salary.month }}/{{ salary.year }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Current Status:</strong> 
+                                    <span class="badge {% if salary.status.value == 'paid' %}bg-success{% elif salary.status.value == 'processing' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ salary.status.value|upper }}
+                                    </span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Payment Date:</strong> {{ salary.payment_date.strftime('%Y-%m-%d') if salary.payment_date else 'Not Paid' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="{{ url_for('salary.edit_salary', salary_id=salary.id) }}" id="salaryForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="employee_id" value="{{ salary.employee_id }}">
+
+                            <div class="section-title">Salary Components</div>
+                            
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="basic_salary" class="form-label">Basic Salary (AED)</label>
+                                        <input type="number" step="0.01" class="form-control" id="basic_salary" name="basic_salary" 
+                                               value="{{ salary.basic_salary }}" required oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="housing_allowance" class="form-label">Housing Allowance (AED)</label>
+                                        <input type="number" step="0.01" class="form-control" id="housing_allowance" name="housing_allowance" 
+                                               value="{{ salary.housing_allowance }}" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="transportation_allowance" class="form-label">Transportation Allowance (AED)</label>
+                                        <input type="number" step="0.01" class="form-control" id="transportation_allowance" name="transportation_allowance" 
+                                               value="{{ salary.transportation_allowance }}" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="other_allowances" class="form-label">Other Allowances (AED)</label>
+                                        <input type="number" step="0.01" class="form-control" id="other_allowances" name="other_allowances" 
+                                               value="{{ salary.other_allowances }}" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-title">Additional Components</div>
+                            
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="overtime_hours" class="form-label">Overtime Hours</label>
+                                        <input type="number" step="0.5" class="form-control" id="overtime_hours" name="overtime_hours" 
+                                               value="{{ salary.overtime_hours }}" min="0" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="overtime_rate" class="form-label">Overtime Rate (AED/hour)</label>
+                                        <input type="number" step="0.01" class="form-control" id="overtime_rate" name="overtime_rate" 
+                                               value="{{ salary.overtime_rate }}" min="0" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="deductions" class="form-label">Other Deductions (AED)</label>
+                                        <input type="number" step="0.01" class="form-control" id="deductions" name="deductions" 
+                                               value="{{ salary.deductions_amount if salary.deductions_amount is not none else 0 }}" min="0" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select class="form-select" id="status" name="status">
+                                            <option value="PENDING" {% if salary.status.value == 'PENDING' %}selected{% endif %}>Pending</option>
+                                            <option value="PROCESSING" {% if salary.status.value == 'PROCESSING' %}selected{% endif %}>Processing</option>
+                                            <option value="PAID" {% if salary.status.value == 'PAID' %}selected{% endif %}>Paid</option>
+                                            <option value="CANCELLED" {% if salary.status.value == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-title">Bonuses</div>
+                            
+                            <div id="bonusesContainer">
+                                <div class="bonuses-list" id="bonusesList">
+                                    <!-- Bonuses will be added here dynamically -->
+                                </div>
+                                <button type="button" class="add-btn" id="addBonusBtn">
+                                    <i class="fas fa-plus"></i> Add Bonus
+                                </button>
+                            </div>
+
+                            <div class="section-title">Deductions</div>
+                            
+                            <div id="deductionsContainer">
+                                <div class="deductions-list" id="deductionsList">
+                                    <!-- Deductions will be added here dynamically -->
+                                </div>
+                                <button type="button" class="add-btn" id="addDeductionBtn">
+                                    <i class="fas fa-plus"></i> Add Deduction
+                                </button>
+                            </div>
+                            
+                            <div class="section-title">Statutory Deductions</div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="tax_amount" class="form-label">Tax Amount (AED)</label>
+                                        <input type="number" class="form-control" id="tax_amount" name="tax_amount" 
+                                            value="{{ salary.tax_amount if salary.tax_amount is not none else '0' }}" min="0" step="0.01" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="social_security_amount" class="form-label">Social Security (AED)</label>
+                                        <input type="number" class="form-control" id="social_security_amount" name="social_security_amount" 
+                                            value="{{ salary.social_security_amount if salary.social_security_amount is not none else '0' }}" min="0" step="0.01" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="other_deductions" class="form-label">Other Deductions (AED)</label>
+                                        <input type="number" class="form-control" id="other_deductions" name="other_deductions" 
+                                            value="{{ salary.other_deductions if salary.other_deductions is not none else '0' }}" min="0" step="0.01" oninput="calculateNetSalary()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-title">Payment Information</div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="payment_date" class="form-label">Payment Date</label>
+                                        <input type="date" class="form-control" id="payment_date" name="payment_date" 
+                                               value="{{ salary.payment_date.strftime('%Y-%m-%d') if salary.payment_date else '' }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Net Salary Calculation</label>
+                                        <div class="calculation-card">
+                                            <p class="calculation-value" id="netSalaryDisplay">AED {{ "%.2f"|format(salary.net_salary) }}</p>
+                                            <div class="calculation-breakdown" id="calculationBreakdown">
+                                                Basic: {{ "%.2f"|format(salary.basic_salary) }} + 
+                                                Allowances: {{ "%.2f"|format(salary.housing_allowance + salary.transportation_allowance + salary.other_allowances) }} + 
+                                                Overtime: {{ "%.2f"|format(salary.overtime_amount) }} - 
+                                                Deductions: {{ "%.2f"|format(salary.total_deductions) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="payment_method" class="form-label">Payment Method</label>
+                                <select class="form-select" id="payment_method" name="payment_method">
+                                    <option value="">Select Method</option>
+                                    <option value="bank" {% if salary.payment_method == 'bank' %}selected{% endif %}>Bank Transfer</option>
+                                    <option value="cash" {% if salary.payment_method == 'cash' %}selected{% endif %}>Cash</option>
+                                    <option value="cheque" {% if salary.payment_method == 'cheque' %}selected{% endif %}>Cheque</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="payment_reference" class="form-label">Payment Reference</label>
+                                <input type="text" class="form-control" id="payment_reference" name="payment_reference" 
+                                       value="{{ salary.payment_reference if salary.payment_reference else '' }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3">{{ salary.notes if salary.notes else '' }}</textarea>
+                            </div>
+
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="{{ url_for('salary.view_salary', salary_id=salary.id) }}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="fas fa-save me-2"></i> Update Salary
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Data storage for bonuses and deductions
+        let bonuses = [];
+        let deductions = [];
+
+        // Function to add a bonus item
+        function addBonusItem(description = '', amount = '') {
+            const bonusId = 'bonus_' + Date.now();
+            const bonusItem = document.createElement('div');
+            bonusItem.className = 'bonus-item';
+            bonusItem.innerHTML = `
+                <input type="text" class="form-control" placeholder="Bonus description" 
+                       id="${bonusId}_desc" name="bonus_descriptions[]" value="${description}">
+                <input type="number" class="form-control bonus-amount" placeholder="Amount" step="0.01" min="0" 
+                       id="${bonusId}_amount" name="bonus_amounts[]" value="${amount}">
+                <button type="button" class="remove-btn" data-id="${bonusId}">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            document.getElementById('bonusesList').appendChild(bonusItem);
+            
+            // Store bonus data
+            bonuses.push({
+                id: bonusId,
+                description: description,
+                amount: amount
+            });
+            
+            // Add event listener to remove button
+            const removeBtn = bonusItem.querySelector('.remove-btn');
+            removeBtn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                removeBonusItem(id);
+            });
+            
+            // Add event listeners to inputs
+            const descInput = document.getElementById(`${bonusId}_desc`);
+            const amountInput = document.getElementById(`${bonusId}_amount`);
+            
+            descInput.addEventListener('change', function() {
+                updateBonusData(bonusId, 'description', this.value);
+            });
+            
+            amountInput.addEventListener('input', function() {
+                updateBonusData(bonusId, 'amount', this.value);
+                calculateNetSalary();
+            });
+            
+            // Trigger calculation if amount is pre-filled
+            if (amount) {
+                calculateNetSalary();
+            }
+        }
+
+        // Function to add a deduction item
+        function addDeductionItem(description = '', amount = '') {
+            const deductionId = 'deduction_' + Date.now();
+            const deductionItem = document.createElement('div');
+            deductionItem.className = 'deduction-item';
+            deductionItem.innerHTML = `
+                <input type="text" class="form-control" placeholder="Deduction description" 
+                       id="${deductionId}_desc" name="deduction_descriptions[]" value="${description}">
+                <input type="number" class="form-control deduction-amount" placeholder="Amount" step="0.01" min="0" 
+                       id="${deductionId}_amount" name="deduction_amounts[]" value="${amount}">
+                <button type="button" class="remove-btn" data-id="${deductionId}">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            document.getElementById('deductionsList').appendChild(deductionItem);
+            
+            // Store deduction data
+            deductions.push({
+                id: deductionId,
+                description: description,
+                amount: amount
+            });
+            
+            // Add event listener to remove button
+            const removeBtn = deductionItem.querySelector('.remove-btn');
+            removeBtn.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                removeDeductionItem(id);
+            });
+            
+            // Add event listeners to inputs
+            const descInput = document.getElementById(`${deductionId}_desc`);
+            const amountInput = document.getElementById(`${deductionId}_amount`);
+            
+            descInput.addEventListener('change', function() {
+                updateDeductionData(deductionId, 'description', this.value);
+            });
+            
+            amountInput.addEventListener('input', function() {
+                updateDeductionData(deductionId, 'amount', this.value);
+                calculateNetSalary();
+            });
+            
+            // Trigger calculation if amount is pre-filled
+            if (amount) {
+                calculateNetSalary();
+            }
+        }
+
+        // Function to remove a bonus item
+        function removeBonusItem(id) {
+            // Remove from DOM
+            const bonusItem = document.querySelector(`.bonus-item button[data-id="${id}"]`)?.parentNode;
+            if (bonusItem) {
+                document.getElementById('bonusesList').removeChild(bonusItem);
+            
+                // Remove from data array
+                bonuses = bonuses.filter(bonus => bonus.id !== id);
+            
+                // Recalculate net salary
+                calculateNetSalary();
+            }
+        }
+
+        // Function to remove a deduction item
+        function removeDeductionItem(id) {
+            // Remove from DOM
+            const deductionItem = document.querySelector(`.deduction-item button[data-id="${id}"]`)?.parentNode;
+            if (deductionItem) {
+                document.getElementById('deductionsList').removeChild(deductionItem);
+            
+                // Remove from data array
+                deductions = deductions.filter(deduction => deduction.id !== id);
+            
+                // Recalculate net salary
+                calculateNetSalary();
+            }
+        }
+
+        // Function to update bonus data
+        function updateBonusData(id, field, value) {
+            const bonus = bonuses.find(b => b.id === id);
+            if (bonus) {
+                bonus[field] = value;
+            }
+        }
+
+        // Function to update deduction data
+        function updateDeductionData(id, field, value) {
+            const deduction = deductions.find(d => d.id === id);
+            if (deduction) {
+                deduction[field] = value;
+            }
+        }
+
+        // Enhanced net salary calculation with breakdown
+        // Enhanced net salary calculation with all statutory deductions
+        function calculateNetSalary() {
+            const basic = parseFloat(document.getElementById('basic_salary').value) || 0;
+            const housing = parseFloat(document.getElementById('housing_allowance').value) || 0;
+            const transport = parseFloat(document.getElementById('transportation_allowance').value) || 0;
+            const other = parseFloat(document.getElementById('other_allowances').value) || 0;
+            const overtimeHours = parseFloat(document.getElementById('overtime_hours').value) || 0;
+            const overtimeRate = parseFloat(document.getElementById('overtime_rate').value) || 0;
+            const otherDeductions = parseFloat(document.getElementById('deductions').value) || 0;
+    
+            // Get statutory deductions
+            const taxAmount = parseFloat(document.getElementById('tax_amount').value) || 0;
+            const socialSecurityAmount = parseFloat(document.getElementById('social_security_amount').value) || 0;
+            const otherStatutoryDeductions = parseFloat(document.getElementById('other_deductions').value) || 0;
+    
+            // Calculate bonuses total
+            const bonusesTotal = bonuses.reduce((total, bonus) => total + parseFloat(bonus.amount || 0), 0);
+
+            // Calculate deductions total
+            const dynamicDeductionsTotal = deductions.reduce((total, deduction) => total + parseFloat(deduction.amount || 0), 0);
+            const deductionsTotal = dynamicDeductionsTotal + otherDeductions + taxAmount + socialSecurityAmount + otherStatutoryDeductions;
+    
+            const totalBasic = basic;
+            const totalAllowances = housing + transport + other;
+            const totalOvertime = overtimeHours * overtimeRate;
+            const totalEarnings = totalBasic + totalAllowances + totalOvertime + bonusesTotal;
+            const netSalary = totalEarnings - deductionsTotal;
+
+            // Update display
+            document.getElementById('netSalaryDisplay').textContent = 'AED ' + netSalary.toFixed(2);
+
+            // Show calculation breakdown
+            const breakdown = `
+                Basic: ${totalBasic.toFixed(2)}
+                + Allowances: ${totalAllowances.toFixed(2)} (Housing: ${housing.toFixed(2)} + Transport: ${transport.toFixed(2)} + Other: ${other.toFixed(2)})
+                + Overtime: ${totalOvertime.toFixed(2)} (${overtimeHours} hrs × ${overtimeRate.toFixed(2)}/hr)
+                + Bonuses: ${bonusesTotal.toFixed(2)}
+                - Dynamic Deductions: ${dynamicDeductionsTotal.toFixed(2)}
+                - Other Deductions: ${otherDeductions.toFixed(2)}
+                - Tax: ${taxAmount.toFixed(2)}
+                - Social Security: ${socialSecurityAmount.toFixed(2)}
+                - Other Statutory: ${otherStatutoryDeductions.toFixed(2)}
+                = Net: ${netSalary.toFixed(2)}
+            `;
+            document.getElementById('calculationBreakdown').innerHTML = breakdown.replace(/\n/g, '<br>');
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to all calculation inputs
+            const inputs = ['basic_salary', 'housing_allowance', 'transportation_allowance', 
+                           'other_allowances', 'overtime_hours', 'overtime_rate', 'deductions'];
+            
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', calculateNetSalary);
+                }
+            });
+
+            const newInputs = ['tax_amount', 'social_security_amount', 'other_deductions'];
+            newInputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', calculateNetSalary);
+                }
+            });
+
+            // Add bonus button event listener
+            const addBonusBtn = document.getElementById('addBonusBtn');
+            if (addBonusBtn) {
+                addBonusBtn.addEventListener('click', function() {
+                    addBonusItem();
+                });
+            }
+            
+            // Add deduction button event listener
+            const addDeductionBtn = document.getElementById('addDeductionBtn');
+            if (addDeductionBtn) {
+                addDeductionBtn.addEventListener('click', function() {
+                    addDeductionItem();
+                });
+            }
+            
+            // Pre-populate existing bonuses from salary
+            {% if salary.bonuses_list %}
+                {% for bonus in salary.bonuses_list %}
+                    addBonusItem('{{ bonus.description }}', '{{ bonus.amount }}');
+                {% endfor %}
+            {% endif %}
+            
+            // Pre-populate existing deductions from salary
+            {% if salary.deductions_list %}
+                {% for deduction in salary.deductions_list %}
+                    addDeductionItem('{{ deduction.description }}', '{{ deduction.amount }}');
+                {% endfor %}
+            {% endif %}
+            
+            // Initial calculation
+            calculateNetSalary();
+            
+            // Auto-dismiss alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    if (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            });
+            
+            // Add form submission handler to prevent double submission
+            let isSubmitting = false;
+            document.getElementById('salaryForm').addEventListener('submit', function(e) {
+                if (isSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+                isSubmitting = true;
+                
+                // Disable submit button
+                const submitBtn = document.getElementById('submitBtn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Updating...';
+                submitBtn.disabled = true;
+                
+                // Allow form to submit normally
+                return true;
+            });
+        });
+    </script>
+</body>
+</html>

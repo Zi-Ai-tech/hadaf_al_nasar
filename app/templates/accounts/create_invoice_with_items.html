@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Create Invoice - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Create New Invoice</h2>
+    
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <!-- FIX: Changed from accounts.create_invoice to invoices.create_invoice -->
+            <form method="POST" action="{{ url_for('invoices.create_invoice') }}" id="invoiceForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- Basic Invoice Info -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="customer_id">Customer *</label>
+                            <select class="form-control" id="customer_id" name="customer_id" required>
+                                <option value="">Select Customer</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}">{{ customer.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="invoice_number">Invoice Number *</label>
+                            <input type="text" class="form-control" id="invoice_number" name="invoice_number" 
+                                   value="{{ suggested_invoice_number }}" required readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="issue_date">Issue Date *</label>
+                            <input type="date" class="form-control" id="issue_date" name="issue_date" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="due_date">Due Date *</label>
+                            <input type="date" class="form-control" id="due_date" name="due_date" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <!-- New invoices always start as Pending. Status can only
+                                 become Paid/Partial through an actual payment action,
+                                 which also records the income and updates amount paid. -->
+                            <input type="text" class="form-control" id="status" value="Pending" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Items Section -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Invoice Items</h5>
+                        <button type="button" class="btn btn-sm btn-success" id="addItemBtn">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                    
+                    <div id="invoiceItems">
+                        <!-- Items will be added here dynamically -->
+                        <div class="invoice-item card mb-2">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label>Description *</label>
+                                        <input type="text" class="form-control" name="item_description[]" placeholder="Service description" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>Quantity</label>
+                                        <input type="number" class="form-control" name="item_quantity[]" value="1" min="1" onchange="calculateItemTotal(this)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>Unit Price (AED) *</label>
+                                        <input type="number" class="form-control" name="item_unit_price[]" step="0.01" min="0" placeholder="0.00" onchange="calculateItemTotal(this)" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>VAT Type</label>
+                                        <select class="form-control" name="item_is_vat[]" onchange="calculateItemTotal(this)">
+                                            <option value="true">VAT (5%)</option>
+                                            <option value="false">Non-VAT</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label>Total (AED)</label>
+                                        <input type="text" class="form-control item-total" readonly value="0.00">
+                                        <button type="button" class="btn btn-sm btn-danger mt-1 remove-item" onclick="removeItem(this)">
+                                            <i class="fas fa-trash"></i> Delete Item
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Section -->
+                <div class="row mb-4">
+                    <div class="col-md-8"></div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Invoice Summary</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td>Subtotal:</td>
+                                        <td id="subtotal">0.00 AED</td>
+                                    </tr>
+                                    <tr>
+                                        <td>VAT (5%):</td>
+                                        <td id="vatTotal">0.00 AED</td>
+                                    </tr>
+                                    <tr class="table-active">
+                                        <td><strong>Grand Total:</strong></td>
+                                        <td id="grandTotal"><strong>0.00 AED</strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Create Invoice</button>
+                <!-- FIX: Changed from accounts.invoices to invoices.list_invoices -->
+                <a href="{{ url_for('invoices.list_invoices') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let itemCounter = 1;
+
+// Add new item row
+document.getElementById('addItemBtn').addEventListener('click', function() {
+    itemCounter++;
+    const newItem = document.createElement('div');
+    newItem.className = 'invoice-item card mb-2';
+    newItem.innerHTML = `
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label>Description *</label>
+                    <input type="text" class="form-control" name="item_description[]" placeholder="Service description" required>
+                </div>
+                <div class="col-md-2">
+                    <label>Quantity</label>
+                    <input type="number" class="form-control" name="item_quantity[]" value="1" min="1" onchange="calculateItemTotal(this)">
+                </div>
+                <div class="col-md-2">
+                    <label>Unit Price (AED) *</label>
+                    <input type="number" class="form-control" name="item_unit_price[]" step="0.01" min="0" placeholder="0.00" onchange="calculateItemTotal(this)" required>
+                </div>
+                <div class="col-md-2">
+                    <label>VAT Type</label>
+                    <select class="form-control" name="item_is_vat[]" onchange="calculateItemTotal(this)">
+                        <option value="true">VAT (5%)</option>
+                        <option value="false">Non-VAT</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label>Total (AED)</label>
+                    <input type="text" class="form-control item-total" readonly value="0.00">
+                    <button type="button" class="btn btn-sm btn-danger mt-1 remove-item" onclick="removeItem(this)">
+                        <i class="fas fa-trash"></i> Delete Item
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('invoiceItems').appendChild(newItem);
+     // Update remove buttons visibility after adding
+    updateRemoveButtonsVisibility();
+});
+
+// Remove item
+// Remove item with confirmation and validation
+function removeItem(button) {
+    const items = document.querySelectorAll('.invoice-item');
+    
+    // Prevent removing the last item
+    if (items.length <= 1) {
+        alert('Invoice must have at least one item.');
+        return;
+    }
+    // Confirm deletion
+    if (confirm('Are you sure you want to remove this item?')) {
+        button.closest('.invoice-item').remove();
+        calculateInvoiceTotal();
+        updateRemoveButtonsVisibility();
+    }
+}
+
+// Update remove buttons visibility
+function updateRemoveButtonsVisibility() {
+    const items = document.querySelectorAll('.invoice-item');
+    const removeButtons = document.querySelectorAll('.remove-item');
+    
+    // Hide delete button if only one item remains
+    if (items.length <= 1) {
+        removeButtons.forEach(btn => btn.style.display = 'none');
+    } else {
+        removeButtons.forEach(btn => btn.style.display = 'block');
+    }
+}
+
+// Calculate item total
+function calculateItemTotal(input) {
+    const itemRow = input.closest('.row');
+    const quantity = parseFloat(itemRow.querySelector('input[name="item_quantity[]"]').value) || 0;
+    const unitPrice = parseFloat(itemRow.querySelector('input[name="item_unit_price[]"]').value) || 0;
+    const isVat = itemRow.querySelector('select[name="item_is_vat[]"]').value === 'true';
+    
+    let subtotal = quantity * unitPrice;
+    let vatAmount = 0;
+    
+    if (isVat) {
+        vatAmount = subtotal * 0.05;
+    }
+    
+    const total = subtotal + vatAmount;
+    
+    itemRow.querySelector('.item-total').value = total.toFixed(2);
+    calculateInvoiceTotal();
+}
+
+// Calculate invoice total
+function calculateInvoiceTotal() {
+    let subtotal = 0;
+    let vatTotal = 0;
+    
+    document.querySelectorAll('.invoice-item').forEach(item => {
+        const quantity = parseFloat(item.querySelector('input[name="item_quantity[]"]').value) || 0;
+        const unitPrice = parseFloat(item.querySelector('input[name="item_unit_price[]"]').value) || 0;
+        const isVat = item.querySelector('select[name="item_is_vat[]"]').value === 'true';
+        
+        const itemSubtotal = quantity * unitPrice;
+        subtotal += itemSubtotal;
+        
+        if (isVat) {
+            vatTotal += itemSubtotal * 0.05;
+        }
+    });
+    
+    const grandTotal = subtotal + vatTotal;
+    
+    document.getElementById('subtotal').textContent = subtotal.toFixed(2) + ' AED';
+    document.getElementById('vatTotal').textContent = vatTotal.toFixed(2) + ' AED';
+    document.getElementById('grandTotal').textContent = grandTotal.toFixed(2) + ' AED';
+}
+
+// Set default dates
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+    const dueDateStr = dueDate.toISOString().split('T')[0];
+    
+    document.getElementById('issue_date').value = today;
+    document.getElementById('due_date').value = dueDateStr;
+    
+    updateRemoveButtonsVisibility();
+});
+</script>
+
+<style>
+.invoice-item {
+    border-left: 4px solid #007bff;
+}
+
+.remove-item {
+    display: block !important;
+    background-color: red !important; /* Make it very visible */
+    color: white !important;
+    border: 2px solid yellow !important;
+}
+
+.card {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

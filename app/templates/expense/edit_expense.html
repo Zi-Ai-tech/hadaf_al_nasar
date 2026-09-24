@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit {{ expense.expense_number }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Edit Expense {{ expense.expense_number }}</h1>
+<form method="POST" action="{{ url_for('expense.edit_expense', expense_id=expense.id) }}">
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label class="form-label" for="description">Description</label>
+            <input class="form-control" id="description" name="description" required value="{{ expense.description }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="expense_type">Type</label>
+            <select class="form-select" id="expense_type" name="expense_type" required>
+                {% for type in expense_types|default([]) %}
+                <option value="{{ type.value }}" {% if expense.expense_type == type %}selected{% endif %}>{{ type.value|replace('_', ' ')|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="amount">Amount</label>
+            <input class="form-control" id="amount" name="amount" type="number" min="0.01" step="0.01" required value="{{ expense.amount }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="tax_amount">Tax amount</label>
+            <input class="form-control" id="tax_amount" name="tax_amount" type="number" min="0" step="0.01" value="{{ expense.tax_amount or 0 }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="status">Status</label>
+            <select class="form-select" id="status" name="status">
+                {% for status in ['pending', 'approved', 'paid', 'rejected'] %}
+                <option value="{{ status }}" {% if expense.status == status %}selected{% endif %}>{{ status|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="expense_date">Expense date</label>
+            <input class="form-control" id="expense_date" name="expense_date" type="date" required value="{{ expense.expense_date }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="due_date">Due date</label>
+            <input class="form-control" id="due_date" name="due_date" type="date" value="{{ expense.due_date or '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="payment_date">Payment date</label>
+            <input class="form-control" id="payment_date" name="payment_date" type="date" value="{{ expense.payment_date or '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="project_id">Project</label>
+            <select class="form-select" id="project_id" name="project_id" required>
+                {% for project in projects %}
+                <option value="{{ project.id }}" {% if expense.project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="employee_id">Employee</label>
+            <select class="form-select" id="employee_id" name="employee_id">
+                <option value="">None</option>
+                {% for employee in employees %}
+                <option value="{{ employee.id }}" {% if expense.employee_id == employee.id %}selected{% endif %}>{{ employee.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="vehicle_id">Vehicle</label>
+            <select class="form-select" id="vehicle_id" name="vehicle_id">
+                <option value="">None</option>
+                {% for vehicle in vehicles %}
+                <option value="{{ vehicle.id }}" {% if expense.vehicle_id == vehicle.id %}selected{% endif %}>{{ vehicle.registration_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="vendor_name">Vendor</label>
+            <input class="form-control" id="vendor_name" name="vendor_name" value="{{ expense.vendor_name or '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="reference_number">Reference number</label>
+            <input class="form-control" id="reference_number" name="reference_number" value="{{ expense.reference_number or '' }}">
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="tags">Tags</label>
+            <input class="form-control" id="tags" name="tags" value="{{ expense.tags or '' }}">
+        </div>
+    </div>
+    <div class="mt-4">
+        <button class="btn btn-primary" type="submit">Save changes</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('expense.view_expense', expense_id=expense.id) }}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

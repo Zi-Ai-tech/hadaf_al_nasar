@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+{% block title %}Incomes - Hadaf Al Nasar{% endblock %}
+
+{% block head %}
+<style>
+    /* Custom styles for income page */
+    .income-form-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+        border: 1px solid #eaeaea;
+    }
+    
+    .income-form-card .card-header {
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        padding: 1.5rem;
+    }
+    
+    .income-list-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        border: 1px solid #eaeaea;
+    }
+    
+    .income-list-card .card-header {
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        color: white;
+        border-radius: 10px 10px 0 0;
+        padding: 1.5rem;
+    }
+    
+    .stat-card {
+        border-radius: 10px;
+        color: white;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-card.total { background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); }
+    .stat-card.pending { background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%); }
+    .stat-card.received { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); }
+    .stat-card.overdue { background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%); }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(33, 150, 243, 0.05);
+    }
+    
+    .badge-pending {
+        background-color: #FF9800;
+        color: white;
+    }
+    
+    .badge-received {
+        background-color: #4CAF50;
+        color: white;
+    }
+    
+    .badge-overdue {
+        background-color: #F44336;
+        color: white;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 0.5rem;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #F44336;
+    }
+    
+    @media (max-width: 768px) {
+        .stat-number {
+            font-size: 2rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">Invoice Income Tracking</h1>
+                    <p class="text-muted mb-0">Track income generated from invoice payments</p>
+                </div>
+                <div class="btn-group">
+                    <span class="badge bg-light text-dark border">
+                        <i class="fas fa-lock me-2"></i>Automatic income recording
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash messages (base.html already has them, but we keep for specific messages) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Form Validation Errors -->
+    {% if form_errors %}
+    <div class="alert alert-danger">
+        <h5><i class="fas fa-exclamation-triangle"></i> Please fix the following errors:</h5>
+        <ul class="mb-0">
+            {% for field, errors in form_errors.items() %}
+                {% for error in errors %}
+                    <li><strong>{{ field|replace('_', ' ')|title }}:</strong> {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Form Validation Errors -->
+    {% if form_errors %}
+    <div class="alert alert-danger">
+        <h5><i class="fas fa-exclamation-triangle"></i> Please fix the following errors:</h5>
+        <ul class="mb-0">
+            {% if form_errors is mapping %}
+                {# Handle dictionary errors (field-specific) #}
+                {% for field, errors in form_errors.items() %}
+                    {% for error in errors %}
+                    <li><strong>{{ field|replace('_', ' ')|title }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            {% elif form_errors is iterable and form_errors is not string %}
+                {# Handle list format (general errors) #}
+                {% for error in form_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            {% else %}
+                {# Handle single error string #}
+                <li>{{ form_errors }}</li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card total">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">AED {{ "%.2f"|format(total_amount|default(0)) }}</div>
+                        <div class="stat-label">Received Invoice Income</div>
+                    </div>
+                    <i class="fas fa-money-bill-wave fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card pending">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ pending_count|default(0) }}</div>
+                        <div class="stat-label">Payment Pending</div>
+                    </div>
+                    <i class="fas fa-clock fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card received">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ received_count|default(0) }}</div>
+                        <div class="stat-label">Payment Received</div>
+                    </div>
+                    <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card overdue">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stat-number">{{ overdue_count|default(0) }}</div>
+                        <div class="stat-label">Payment Overdue</div>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('income.incomes') }}" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Payment Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Payment Statuses</option>
+                                <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="received" {% if request.args.get('status') == 'received' %}selected{% endif %}>Payment Received</option>
+                                <option value="overdue" {% if request.args.get('status') == 'overdue' %}selected{% endif %}>Payment Overdue</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="">All Types</option>
+                            {% if income_types is mapping %}
+                                {% for type_key, type_value in income_types.items() %}
+                                    <option value="{{ type_key }}" {% if request.args.get('type') == type_key %}selected{% endif %}>
+                                        {{ type_value|replace('_', ' ')|title }}
+                                    </option>
+                                {% endfor %}
+                            {% else %}
+                                {% for type_key, type_value in income_types %}
+                                    <option value="{{ type_key }}" {% if request.args.get('type') == type_key %}selected{% endif %}>
+                                        {{ type_value|replace('_', ' ')|title }}
+                                    </option>
+                                {% endfor %}
+                            {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="start_date" class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   value="{{ request.args.get('start_date', '') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="end_date" class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                   value="{{ request.args.get('end_date', '') }}">
+                        </div>
+                        <div class="col-md-12">
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i> Apply Filters
+                                </button>
+                                <a href="{{ url_for('income.incomes') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Clear Filters
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content - Automatic Income Recording -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="income-form-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Payment Status Summary</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 text-muted">
+                        This section tracks invoice income generated from received payments. Partial payments appear as separate income records.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Income List Column -->
+        <div class="col-lg-7">
+            <div class="income-list-card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-list me-2"></i>Invoice Income Records</h5>
+                        <span class="badge bg-light text-dark">
+                            {{ incomes.total }} invoices • Page {{ incomes.page }} of {{ incomes.pages }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if incomes.items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Invoice</th>
+                                    <th>Amount</th>
+                                    <th>Customer</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for income in incomes.items %}
+                                <tr>
+                                    <td>{{ income.income_date.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        {% if income.invoice %}
+                                            <strong>{{ income.invoice.invoice_number }}</strong>
+                                        {% else %}
+                                            <strong>{{ income.income_number }}</strong>
+                                        {% endif %}
+                                        {% if income.reference_number %}
+                                        <br><small class="text-muted">{{ income.reference_number }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>AED {{ "%.2f"|format(income.invoice.amount_paid if income.invoice else income.total_amount) }}</strong>
+                                        {% if income.currency != 'AED' %}
+                                        <br><small class="text-muted">{{ income.currency }} {{ "%.2f"|format(income.amount) }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set invoice_customer = income.invoice.customer if income.invoice and income.invoice.customer else income.customer %}
+                                        {% if invoice_customer %}
+                                            <span class="text-primary">{{ invoice_customer.company_name|truncate(15) }}</span>
+                                        {% elif income.customer_name %}
+                                            {{ income.customer_name|truncate(15) }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if income.status == 'pending' %}
+                                            <span class="badge badge-pending">Payment Pending</span>
+                                        {% elif income.status == 'received' %}
+                                            <span class="badge badge-received">Received</span>
+                                        {% elif income.status == 'overdue' %}
+                                            <span class="badge badge-overdue">Overdue</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{{ url_for('income.view_income', income_id=income.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if incomes.pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if incomes.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('income.incomes', page=incomes.prev_num, **request.args) }}">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in incomes.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+                                {% if page_num %}
+                                    {% if page_num == incomes.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('income.incomes', page=page_num, **request.args) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if incomes.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('income.incomes', page=incomes.next_num, **request.args) }}">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-money-bill-wave fa-4x text-muted mb-3"></i>
+                        <h4>No Incomes Found</h4>
+                        <p class="text-muted mb-4">Start by recording your first income using the form on the left.</p>
+                        <a href="#incomeForm" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Create First Income
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // No manual income form; income is recorded automatically from completed invoice payments.
+</script>
+{% endblock %}

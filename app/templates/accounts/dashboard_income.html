@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Income Received - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Income Received</h1>
+        <p class="text-muted mb-0">Total amount paid by customers against their invoices.</p>
+    </div>
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+
+<div class="card mb-4 border-success">
+    <div class="card-body">
+        <div class="text-muted">Total amount received</div>
+        <h2 class="text-success mb-0">AED {{ "%.2f"|format(total_received) }}</h2>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">Paid by Customer</h5></div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Customer</th><th>Invoices</th><th class="text-end">Total Paid (AED)</th></tr></thead>
+            <tbody>
+            {% for row in customer_totals %}
+                <tr>
+                    <td>{{ row.company_name }}</td>
+                    <td>{{ row.invoice_count }}</td>
+                    <td class="text-end">{{ "%.2f"|format(row.total_paid or 0) }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="3" class="text-center text-muted py-4">No customer payments recorded.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

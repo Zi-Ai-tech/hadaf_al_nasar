@@ -1,0 +1,1 @@
+[main/sessions/main/73b94d80-35ad-446c-831c-e5e8490426ee#L5] Assistant: You've sent a message. What would you like to do? You can type 'create', 'prepare_patch', 'patch', 'update', 'read', 'revise', 'list', 'inspect', 'evaluate', 'apply', 'reject', 'quarantine', 'history', 'restore_collection', or 'complete' to take an action on a skill or

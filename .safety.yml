@@ -1,0 +1,39 @@
+# .safety.yml
+version: "1.0"
+scan:
+  # Scan dependencies for known vulnerabilities
+  dependencies: true
+  # Check for insecure API usage patterns
+  api: true
+  # Analyze code for security anti-patterns
+  code: true
+  # Check for secrets in code
+  secrets: true
+
+checks:
+  # Security checks to perform
+  - id: SQL-injection
+    severity: high
+  - id: XSS
+    severity: high
+  - id: CSRF
+    severity: medium
+  - id: insecure-deserialization
+    severity: high
+  - id: broken-authentication
+    severity: high
+
+exclude:
+  # Files and directories to exclude from scanning
+  - "**/migrations/**"
+  - "**/tests/**"
+  - "**/venv/**"
+  - "**/node_modules/**"
+
+output:
+  # Output format for reports
+  format: json
+  file: security-report.json
+
+# Schedule for automated scanning (for CI/CD)
+schedule: "0 0 * * 0"  # Run every Sunday at midnight

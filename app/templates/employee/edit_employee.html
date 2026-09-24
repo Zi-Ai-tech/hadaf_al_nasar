@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Employee - Hadaf Al Nasar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        #sidebar {
+            min-height: 100vh;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar .nav-link.active {
+            background-color: #0d6efd;
+            color: white !important;
+            border-radius: 5px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .form-label.required:after {
+            content: " *";
+            color: #dc3545;
+        }
+        input:invalid, select:invalid {
+            border-color: #dc3545;
+        }
+        input:valid, select:valid {
+            border-color: #198754;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+                <div class="position-sticky">
+                    <ul class="nav flex-column pt-3">
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {% if request.endpoint == 'dashboard.dashboard' %}active{% endif %}" 
+                               href="{{ url_for('dashboard.dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {% if 'employee' in request.endpoint %}active{% endif %}" 
+                               href="{{ url_for('employee.employees') }}">
+                                <i class="fas fa-users me-2"></i>
+                                Employees
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {% if 'salary' in request.endpoint and request.endpoint != 'salary.salaries' %}active{% endif %}" 
+                               href="{{ url_for('salary.salaries') }}">
+                                <i class="fas fa-money-bill-wave me-2"></i>
+                                Salaries
+                            </a>
+                        </li>
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {% if 'expense' in request.endpoint %}active{% endif %}" 
+                               href="{{ url_for('expense.expenses') }}">
+                                <i class="fas fa-receipt me-2"></i>
+                                Expenses
+                            </a>
+                        </li>
+                        <!-- FIXED: Changed from salary.financial_report to salary.salaries -->
+                        <li class="nav-item mb-2">
+                            <a class="nav-link {% if request.endpoint == 'salary.salaries' %}active{% endif %}" 
+                               href="{{ url_for('salary.salaries') }}">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Financial Reports
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Edit Employee</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="{{ url_for('employee.employees') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Employees
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user-edit me-2"></i>Edit Employee Details
+                        </h5>
+                        <p class="text-muted mb-0 mt-1">Employee ID: {{ employee.id }}</p>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('employee.edit_employee', employee_id=employee.id) }}" 
+                              id="editEmployeeForm" novalidate>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="border-bottom pb-2">
+                                        <i class="fas fa-id-card me-2"></i>Personal Information
+                                    </h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label required">Full Name</label>
+                                        <input type="text" class="form-control" id="name" name="name" 
+                                               value="{{ employee.name }}" required
+                                               placeholder="Enter full name">
+                                        <div class="invalid-feedback">Please enter employee's full name.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="emirates_id" class="form-label">Emirates ID</label>
+                                        <input type="text" class="form-control" id="emirates_id" name="emirates_id" 
+                                               value="{{ employee.emirates_id or '' }}"
+                                               placeholder="784-XXXX-XXXXXXX-X">
+                                        <div class="form-text">Format: 784-XXXX-XXXXXXX-X</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="passport_number" class="form-label">Passport Number</label>
+                                        <input type="text" class="form-control" id="passport_number" name="passport_number" 
+                                               value="{{ employee.passport_number or '' }}"
+                                               placeholder="Enter passport number">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="position" class="form-label required">Position</label>
+                                        <input type="text" class="form-control" id="position" name="position" 
+                                               value="{{ employee.position }}" required
+                                               placeholder="Enter position">
+                                        <div class="invalid-feedback">Please enter employee's position.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="department" class="form-label required">Department</label>
+                                        <select class="form-select" id="department" name="department" required>
+                                            <option value="">Select Department</option>
+                                            <option value="Accounts" {% if employee.department == 'Accounts' %}selected{% endif %}>Accounts</option>
+                                            <option value="Transport" {% if employee.department == 'Transport' %}selected{% endif %}>Transport</option>
+                                            <option value="Management" {% if employee.department == 'Management' %}selected{% endif %}>Management</option>
+                                            <option value="Operations" {% if employee.department == 'Operations' %}selected{% endif %}>Operations</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a department.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="join_date" class="form-label">Join Date</label>
+                                        <input type="date" class="form-control" id="join_date" name="join_date" 
+                                               value="{{ employee.join_date.strftime('%Y-%m-%d') if employee.join_date else '' }}">
+                                        <div class="form-text">Employee's joining date</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="border-bottom pb-2">
+                                        <i class="fas fa-money-bill-wave me-2"></i>Salary Information
+                                    </h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="basic_salary" class="form-label required">Basic Salary (AED)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">AED</span>
+                                            <input type="number" step="0.01" class="form-control" id="basic_salary" 
+                                                   name="basic_salary" value="{{ employee.basic_salary }}" required
+                                                   min="0" placeholder="0.00">
+                                        </div>
+                                        <div class="invalid-feedback">Basic salary must be greater than 0.</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="housing_allowance" class="form-label">Housing Allowance (AED)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">AED</span>
+                                            <input type="number" step="0.01" class="form-control" id="housing_allowance" 
+                                                   name="housing_allowance" value="{{ employee.housing_allowance or 0 }}"
+                                                   min="0" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="transportation_allowance" class="form-label">Transportation Allowance (AED)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">AED</span>
+                                            <input type="number" step="0.01" class="form-control" id="transportation_allowance" 
+                                                   name="transportation_allowance" value="{{ employee.transportation_allowance or 0 }}"
+                                                   min="0" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="other_allowances" class="form-label">Other Allowances (AED)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">AED</span>
+                                            <input type="number" step="0.01" class="form-control" id="other_allowances" 
+                                                   name="other_allowances" value="{{ employee.other_allowances or 0 }}"
+                                                   min="0" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 offset-md-6">
+                                    <div class="alert alert-info py-2">
+                                        <strong>Total Monthly Salary: 
+                                            <span id="totalSalaryDisplay">
+                                                AED {{ "%.2f"|format(employee.basic_salary + (employee.housing_allowance or 0) + (employee.transportation_allowance or 0) + (employee.other_allowances or 0)) }}
+                                            </span>
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="border-bottom pb-2">
+                                        <i class="fas fa-address-card me-2"></i>Contact & Banking Information
+                                    </h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="phone_number" class="form-label required">Phone Number (WhatsApp)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">+971</span>
+                                            {% if employee.employment_status == 'deleted' or employee.deleted_at %}
+                                            <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                                                   value="{{ employee.phone_number if employee else '' }}" 
+                                                   disabled 
+                                                   placeholder="Phone number cannot be edited for deleted employees">
+                                            <div class="form-text text-danger">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                                Phone number cannot be edited for deleted employees
+                                            </div>
+                                            {% else %}
+                                            <!-- For active/inactive employees, show editable field -->
+                                             <input type="tel" class="form-control" id="phone_number" name="phone_number"
+                                             value="{{ employee.phone_number if employee else '' }}"
+                                             required pattern="5[0-9]{8}"
+                                             title="UAE phone number starting with 5 followed by 8 digits"
+                                             placeholder="501234567">
+                                            <div class="form-text">Enter 9-digit UAE mobile number starting with 5</div>
+                                            <div class="invalid-feedback">Please enter a valid UAE phone number (9 digits starting with 5).</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="bank_name" class="form-label">Bank Name</label>
+                                        <input type="text" class="form-control" id="bank_name" name="bank_name" 
+                                               value="{{ employee.bank_name or '' }}"
+                                               placeholder="e.g., Emirates NBD, ADCB">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="bank_account" class="form-label">Bank Account Number</label>
+                                        <input type="text" class="form-control" id="bank_account" name="bank_account" 
+                                               value="{{ employee.bank_account or '' }}"
+                                               placeholder="Enter account number">
+                                        <div class="form-text">For salary transfer purposes</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" class="form-check-input" id="is_active" name="is_active"
+                                               {% if employee.employment_status == 'active' and employee.deleted_at is none %}checked{% endif %}>
+                                        <label class="form-check-label h5" for="is_active">
+                                            <i class="fas fa-user-check me-2"></i>Active Employee
+                                        </label>
+                                        <div class="form-text">
+                                            {% if employee.is_active %}
+                                            <span class="text-success">Employee is currently active and will appear in salary processing</span>
+                                            {% else %}
+                                            <span class="text-danger">Employee is inactive and will not appear in salary processing</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between border-top pt-3">
+                                <div>
+                                    <a href="{{ url_for('employee.employees') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times me-1"></i> Cancel
+                                    </a>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-warning me-2" onclick="resetForm()">
+                                        <i class="fas fa-undo me-1"></i> Reset
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i> Update Employee
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Calculate total salary dynamically
+        function calculateTotalSalary() {
+            const basic = parseFloat(document.getElementById('basic_salary').value) || 0;
+            const housing = parseFloat(document.getElementById('housing_allowance').value) || 0;
+            const transport = parseFloat(document.getElementById('transportation_allowance').value) || 0;
+            const other = parseFloat(document.getElementById('other_allowances').value) || 0;
+            const total = basic + housing + transport + other;
+            
+            document.getElementById('totalSalaryDisplay').textContent = 
+                'AED ' + total.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+
+        // Attach event listeners to salary fields
+        ['basic_salary', 'housing_allowance', 'transportation_allowance', 'other_allowances'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateTotalSalary);
+        });
+
+        // Initial calculation
+        calculateTotalSalary();
+
+        // Deactivation confirmation
+        document.getElementById('is_active').addEventListener('change', function(e) {
+            if (!this.checked) {
+                if (!confirm('⚠️ Deactivating this employee will:\n\n• Remove them from active salary processing\n• Hide them from active employee lists\n• Preserve all historical records\n\nAre you sure you want to deactivate?')) {
+                    this.checked = true;
+                    e.preventDefault();
+                }
+            }
+        });
+
+        // Form validation
+        document.getElementById('editEmployeeForm').addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Validate basic salary
+            const basicSalary = parseFloat(document.getElementById('basic_salary').value);
+            if (basicSalary <= 0 || isNaN(basicSalary)) {
+                document.getElementById('basic_salary').classList.add('is-invalid');
+                isValid = false;
+            } else {
+                document.getElementById('basic_salary').classList.remove('is-invalid');
+            }
+            
+            // Validate phone number
+            const phone = document.getElementById('phone_number').value;
+            const phonePattern = /^5\d{8}$/;
+            if (!phonePattern.test(phone)) {
+                document.getElementById('phone_number').classList.add('is-invalid');
+                isValid = false;
+            } else {
+                document.getElementById('phone_number').classList.remove('is-invalid');
+            }
+            
+            // Validate required fields
+            const requiredFields = ['name', 'position', 'department'];
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                // Scroll to first error
+                const firstError = document.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+
+        // Reset form function
+        function resetForm() {
+            if (confirm('Reset all changes to original values?')) {
+                document.getElementById('editEmployeeForm').reset();
+                calculateTotalSalary(); // Recalculate total after reset
+            }
+        }
+
+        // Real-time validation
+        document.querySelectorAll('input[required], select[required]').forEach(field => {
+            field.addEventListener('blur', function() {
+                if (!this.value.trim()) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        });
+
+        // Phone number formatting
+        document.getElementById('phone_number').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 9) value = value.substr(0, 9);
+            e.target.value = value;
+            
+            // Validate on the fly
+            const phonePattern = /^5\d{8}$/;
+            if (value.length === 9 && !phonePattern.test(value)) {
+                e.target.classList.add('is-invalid');
+            } else if (value.length === 9) {
+                e.target.classList.remove('is-invalid');
+            }
+        });
+    </script>
+</body>
+</html>

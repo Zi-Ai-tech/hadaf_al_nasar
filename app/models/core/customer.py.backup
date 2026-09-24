@@ -1,0 +1,103 @@
+# app/models/core/customer.py
+from app import db
+from app.models.core.base import BaseModel, SoftDeleteMixin
+from datetime import datetime
+
+class Customer(BaseModel, SoftDeleteMixin):
+    """
+    Customer model for company/client management
+    """
+    __tablename__ = 'customer'
+
+    # Company Information
+    company_name = db.Column(db.String(200), nullable=False)
+    trade_license_number = db.Column(db.String(100))
+    legal_form = db.Column(db.String(50))
+    establishment_date = db.Column(db.Date)
+    business_activities = db.Column(db.Text)
+    company_size = db.Column(db.String(50))
+    industry_type = db.Column(db.String(100))
+
+    # Contact Information
+    contact_person = db.Column(db.String(100))
+    contact_designation = db.Column(db.String(100))
+    email = db.Column(db.String(100))
+    phone = db.Column(db.String(20))
+    mobile = db.Column(db.String(20))
+
+    # Address
+    address = db.Column(db.Text)
+    emirate = db.Column(db.String(50))
+    city = db.Column(db.String(50))
+    po_box = db.Column(db.String(50))
+
+    # Tax and Legal
+    trn = db.Column(db.String(50))
+    trn_validated = db.Column(db.Boolean, default=False)
+    trn_validation_date = db.Column(db.DateTime)
+    license_validated = db.Column(db.Boolean, default=False)
+
+    # Financial
+    credit_limit = db.Column(db.Float, default=0)
+    payment_terms = db.Column(db.String(50), default='NET30')
+
+    # ---------------------------
+    # Relationships (FIXED)
+    # ---------------------------
+    shipments = db.relationship(
+        "Shipment",
+        back_populates="customer",
+        lazy="dynamic"
+    )
+
+    invoices = db.relationship(
+        "Invoice",
+        back_populates="customer",
+        lazy="dynamic"
+    )
+
+    customer_incomes = db.relationship("Income", back_populates="customer")
+    "Income", 
+    back_populates="customer"
+    
+
+    # ---------------------------
+    # Representation
+    # ---------------------------
+    def __repr__(self):
+        return f"<Customer {self.company_name} ({'Active' if self.is_active else 'Archived'})>"
+
+    # ---------------------------
+    # Utility properties and methods
+    # ---------------------------
+    @property
+    def status(self):
+        return "Active" if self.is_active else "Archived"
+
+    @property
+    def total_outstanding(self):
+        try:
+            from app.models.finance.invoice import Invoice  # Local import avoids circular import
+            unpaid_invoices = Invoice.query.filter_by(
+                customer_id=self.id,
+                status='pending'
+            ).all()
+            return sum(inv.total_amount for inv in unpaid_invoices)
+        except Exception:
+            return 0
+
+    @property
+    def credit_available(self):
+        return max(0, self.credit_limit - self.total_outstanding)
+
+    def can_place_order(self, order_amount=0):
+        if not self.is_active:
+            return False, "Customer is archived"
+        if self.credit_limit == 0:
+            return True, "OK"
+        if order_amount > self.credit_available:
+            return False, f"Order amount exceeds available credit ({self.credit_available})"
+        return True, "OK"
+
+    def recent_shipments(self, limit=5):
+        return self.shipments.order_by("created_at desc").limit(limit).all()

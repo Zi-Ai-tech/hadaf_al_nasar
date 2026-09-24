@@ -1,0 +1,473 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Hadaf Al Nasar{% endblock %}
+
+{% block head %}
+<style>
+    .dashboard-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .dashboard-header {
+        background: white;
+        padding: 2rem 0;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+
+    .welcome-section h1 {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .welcome-section p {
+        color: #7f8c8d;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255,255,255,0.2);
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+
+    .dashboard-card-link {
+        display: block;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .stat-card.total { border-top: 4px solid #3498db; }
+    .stat-card.pending { border-top: 4px solid #f39c12; }
+    .stat-card.paid { border-top: 4px solid #27ae60; }
+    .stat-card.customers { border-top: 4px solid #9b59b6; }
+    .stat-card.income { border-top: 4px solid #16a085; }
+    .stat-card.expenses { border-top: 4px solid #e67e22; }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+    }
+
+    .stat-icon.total { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+    .stat-icon.pending { background: rgba(243, 156, 18, 0.1); color: #f39c12; }
+    .stat-icon.paid { background: rgba(39, 174, 96, 0.1); color: #27ae60; }
+    .stat-icon.customers { background: rgba(155, 89, 182, 0.1); color: #9b59b6; }
+    .stat-icon.income { background: rgba(22, 160, 133, 0.1); color: #16a085; }
+    .stat-icon.expenses { background: rgba(230, 126, 34, 0.1); color: #e67e22; }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #2c3e50;
+        margin: 0.5rem 0;
+        line-height: 1;
+    }
+
+    .stat-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    .outstanding-card {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 2rem 0;
+        box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+    }
+
+    .outstanding-card h3 {
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .outstanding-amount {
+        font-size: 3rem;
+        font-weight: 800;
+        margin: 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .action-panel {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+        height: 100%;
+    }
+
+    .action-panel h3 {
+        color: #2c3e50;
+        border-bottom: 2px solid #ecf0f1;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .action-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: #2c3e50;
+        border: 1px solid transparent;
+    }
+
+    .action-item:hover {
+        background: #f8f9fa;
+        transform: translateX(5px);
+        border-color: #3498db;
+        text-decoration: none;
+        color: #2c3e50;
+    }
+
+    .action-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        background: #ecf0f1;
+        color: #3498db;
+    }
+
+    .action-text {
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .action-arrow {
+        color: #bdc3c7;
+        transition: all 0.3s ease;
+    }
+
+    .action-item:hover .action-arrow {
+        color: #3498db;
+        transform: translateX(3px);
+    }
+
+    .user-badge {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .date-display {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .stat-number {
+            font-size: 2rem;
+        }
+        
+        .outstanding-amount {
+            font-size: 2.5rem;
+        }
+        
+        .welcome-section h1 {
+            font-size: 1.8rem;
+        }
+        
+        .action-panel {
+            margin-bottom: 1rem;
+        }
+    }
+
+    /* Animation for stats */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-card {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="welcome-section">
+                        <h1>Welcome to Hadaf Al Nasar</h1>
+                        <p>Hello, <strong>{{ current_user.username }}</strong> • 
+                           <span class="user-badge">{{ current_user.user_type }}</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="date-display">
+                        <i class="fas fa-calendar me-2"></i>
+                        {{ now.strftime('%A, %B %d, %Y') if now else '' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Display error message if any -->
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 10px;">
+            <strong><i class="fas fa-exclamation-triangle me-2"></i>Error:</strong> {{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        <!-- Statistics Cards -->
+        <div class="row">
+            <div class="col-md-3">
+                <a href="{{ url_for('invoices.list_invoices') }}" class="dashboard-card-link">
+                    <div class="stat-card total animate-card">
+                        <div class="stat-icon total">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="stat-number">{{ total_invoices }}</div>
+                        <div class="stat-label">Total Invoices</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="{{ url_for('invoices.list_invoices', status='outstanding') }}" class="dashboard-card-link">
+                    <div class="stat-card pending animate-card">
+                        <div class="stat-icon pending">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-number">{{ pending_invoices }}</div>
+                        <div class="stat-label">Pending Invoices</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="{{ url_for('invoices.list_invoices', status='paid') }}" class="dashboard-card-link">
+                    <div class="stat-card paid animate-card">
+                        <div class="stat-icon paid">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-number">{{ paid_invoices }}</div>
+                        <div class="stat-label">Paid Invoices</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="{{ url_for('customers.customers') }}" class="dashboard-card-link">
+                    <div class="stat-card customers animate-card">
+                        <div class="stat-icon customers">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-number">{{ active_customers_count }}</div>
+                        <div class="stat-label">Active Customers</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="{{ url_for('dashboard.income_details') }}" class="text-decoration-none">
+                    <div class="stat-card income animate-card">
+                        <div class="stat-icon income"><i class="fas fa-money-bill-trend-up"></i></div>
+                        <div class="stat-number">AED {{ "%.2f"|format(total_income_received|default(0)) }}</div>
+                        <div class="stat-label">Income Received</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="{{ url_for('dashboard.expense_details') }}" class="text-decoration-none">
+                    <div class="stat-card expenses animate-card">
+                        <div class="stat-icon expenses"><i class="fas fa-receipt"></i></div>
+                        <div class="stat-number">AED {{ "%.2f"|format(total_expenses|default(0)) }}</div>
+                        <div class="stat-label">Expenses</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Outstanding Balance -->
+        <a href="{{ url_for('invoices.list_invoices', status='outstanding') }}" class="dashboard-card-link">
+            <div class="outstanding-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3><i class="fas fa-money-bill-wave me-2"></i>Outstanding Balance</h3>
+                        <p class="mb-0 opacity-90">Total pending amount from customers</p>
+                    </div>
+                    <div class="col-md-4 text-center text-md-end">
+                        <div class="outstanding-amount">AED {{ "%.2f"|format(outstanding_balance) }}</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+
+        <!-- Quick Actions & HR Panels -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="action-panel">
+                    <h3><i class="fas fa-rocket me-2 text-primary"></i>Quick Actions</h3>
+                    <a href="{{ url_for('customers.customers') }}" class="action-item">
+                        <div class="action-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="action-text">Manage Customers</div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('invoices.list_invoices') }}" class="action-item">
+                        <div class="action-icon">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="action-text">View All Invoices</div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('invoices.create_invoice') }}" class="action-item">
+                        <div class="action-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="action-text">Create New Invoice</div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="action-panel">
+                    <h3><i class="fas fa-chart-line me-2 text-success"></i>HR & Finance</h3>
+                    <a href="{{ url_for('employee.employees') }}" class="action-item">
+                        <div class="action-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="action-text">Employee Management</div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('salary.salaries') }}" class="action-item">
+                        <div class="action-icon">
+                            <i class="fas fa-money-check"></i>
+                        </div>
+                        <div class="action-text">Salary Processing</div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('expense.expenses') }}" class="action-item">
+                        <div class="action-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="action-text">Expense Tracking</div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                    <a href="{{ url_for('income.incomes') }}" class="action-item">
+                        <div class="action-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="action-text">Income Tracking</div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Footer -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="text-center text-muted">
+                    <small>
+                        <i class="fas fa-sync-alt me-1"></i>
+                        Last updated: {{ now.strftime('%H:%M') if now else 'N/A' }} • 
+                        <i class="fas fa-database me-1 ms-3"></i>
+                        {{ total_invoices }} total transactions • 
+                        <i class="fas fa-shield-alt me-1 ms-3"></i>
+                        System secure
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add smooth animations to cards on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all stat cards and action panels
+        document.querySelectorAll('.stat-card, .action-panel').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease';
+            observer.observe(el);
+        });
+    });
+</script>
+{% endblock %}

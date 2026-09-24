@@ -1,0 +1,298 @@
+from app import db
+from app.models.core.base import BaseModel, SoftDeleteMixin
+from datetime import datetime
+from sqlalchemy.orm import relationship, validates
+import re
+
+class Driver(BaseModel, SoftDeleteMixin):
+    """
+    Driver model for logistics and transportation operations
+    """
+    __tablename__ = 'driver'
+    
+    # [ALL YOUR EXISTING FIELDS - KEEP THEM EXACTLY AS THEY WERE]
+    name = db.Column(db.String(100), nullable=False)
+    emirates_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    passport_number = db.Column(db.String(50), nullable=True)
+    nationality = db.Column(db.String(50), nullable=True)
+    date_of_birth = db.Column(db.Date, nullable=True)
+    phone = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100), nullable=True)
+    address = db.Column(db.Text, nullable=True)
+    emergency_contact_name = db.Column(db.String(100), nullable=True)
+    emergency_contact_phone = db.Column(db.String(20), nullable=True)
+    emergency_contact_relation = db.Column(db.String(50), nullable=True)
+    license_number = db.Column(db.String(50), nullable=False, index=True)
+    license_type = db.Column(db.String(20), nullable=False, default='light')
+    license_issuing_authority = db.Column(db.String(100), nullable=True)
+    license_issue_date = db.Column(db.Date, nullable=True)
+    license_expiry_date = db.Column(db.Date, nullable=False)
+    license_classes = db.Column(db.String(200), nullable=True)
+    employee_id = db.Column(db.String(50), nullable=True, unique=True, index=True)
+    join_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
+    employment_type = db.Column(db.String(20), default='full_time')
+    department = db.Column(db.String(50), default='logistics')
+    position = db.Column(db.String(50), default='driver')
+    status = db.Column(db.String(20), default='available', nullable=False)
+    current_location = db.Column(db.String(100), nullable=True)
+    last_active = db.Column(db.DateTime, nullable=True)
+    current_vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=True)
+    preferred_vehicle_types = db.Column(db.String(200), nullable=True)
+    total_trips = db.Column(db.Integer, default=0, nullable=False)
+    total_distance = db.Column(db.Float, default=0.0, nullable=False)
+    average_rating = db.Column(db.Float, default=0.0, nullable=False)
+    rating_count = db.Column(db.Integer, default=0, nullable=False)
+    passport_copy_url = db.Column(db.String(500), nullable=True)
+    license_copy_url = db.Column(db.String(500), nullable=True)
+    id_copy_url = db.Column(db.String(500), nullable=True)
+    medical_certificate_url = db.Column(db.String(500), nullable=True)
+    medical_certificate_expiry = db.Column(db.Date, nullable=True)
+    blood_group = db.Column(db.String(5), nullable=True)
+    medical_conditions = db.Column(db.Text, nullable=True)
+    special_skills = db.Column(db.Text, nullable=True)
+    languages = db.Column(db.String(200), nullable=True)
+
+    current_vehicle = relationship('Vehicle', backref='current_drivers') 
+    back_populates='current_driver', 
+                                   foreign_keys=[current_vehicle_id])
+    # performance_records = relationship('DriverPerformance', backref='driver_performance_records')  # Temporarily disabled
+    # assignments = relationship('# DriverAssignment', backref='driver', lazy='dynamic')  # Temporarily disabled 
+                               backref='assignment_driver_ref', 
+                               lazy=True)
+    # payments = relationship('Payment', backref='driver', lazy='dynamic', foreign_keys='Payment.driver_id')  # Temporarily disabled 
+                          backref='payment_driver_ref', 
+                          lazy='dynamic',
+                          foreign_keys='Payment.driver_id')
+    
+    def __init__(self, **kwargs):
+        if 'employee_id' not in kwargs:
+            kwargs['employee_id'] = self.generate_employee_id()
+        super().__init__(**kwargs)
+    
+    @validates('phone')
+    def validate_phone(self, key, phone):
+        if phone and not re.match(r'^\+?[\d\s\-\(\)]{10,}$', phone):
+            raise ValueError("Invalid phone number format")
+        return phone
+    
+    @validates('email')
+    def validate_email(self, key, email):
+        if email and not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            raise ValueError("Invalid email format")
+        return email
+    
+    @validates('emirates_id')
+    def validate_emirates_id(self, key, emirates_id):
+        if emirates_id and not re.match(r'^784-\d{4}-\d{7}-\d{1}$', emirates_id):
+            raise ValueError("Invalid Emirates ID format. Use format: 784-XXXX-XXXXXXX-X")
+        return emirates_id
+    
+    @property
+    def is_available(self):
+        return self.status == 'available' and self.is_active
+    
+    @property
+    def is_assigned(self):
+        return self.status == 'assigned'
+    
+    @property
+    def is_on_leave(self):
+        return self.status == 'on_leave'
+    
+    @property
+    def license_is_valid(self):
+        if not self.license_expiry_date:
+            return False
+        return self.license_expiry_date > datetime.utcnow().date()
+    
+    @property
+    def medical_certificate_is_valid(self):
+        if not self.medical_certificate_expiry:
+            return False
+        return self.medical_certificate_expiry > datetime.utcnow().date()
+    
+    @property
+    def age(self):
+        if self.date_of_birth:
+            today = datetime.utcnow().date()
+            return today.year - self.date_of_birth.year - (
+                (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)
+            )
+        return None
+    
+    @property
+    def experience_years(self):
+        if self.join_date:
+            today = datetime.utcnow().date()
+            return today.year - self.join_date.year - (
+                (today.month, today.day) < (self.join_date.month, self.join_date.day)
+            )
+        return 0
+    
+    def generate_employee_id(self):
+        from datetime import datetime
+        year = datetime.now().year
+        last_driver = Driver.query.order_by(Driver.id.desc()).first()
+        sequence = (last_driver.id + 1) if last_driver else 1
+        return f"DRV-{year}-{sequence:04d}"
+    
+    def to_dict(self, include_assignments=False, include_performance=False):
+        data = super().to_dict()
+        
+        # Add computed properties
+        data['is_available'] = self.is_available
+        data['is_assigned'] = self.is_assigned
+        data['is_on_leave'] = self.is_on_leave
+        data['license_is_valid'] = self.license_is_valid
+        data['medical_certificate_is_valid'] = self.medical_certificate_is_valid
+        data['age'] = self.age
+        data['experience_years'] = self.experience_years
+        
+        # Format dates
+        if self.date_of_birth:
+            data['date_of_birth'] = self.date_of_birth.isoformat()
+        if self.license_issue_date:
+            data['license_issue_date'] = self.license_issue_date.isoformat()
+        if self.license_expiry_date:
+            data['license_expiry_date'] = self.license_expiry_date.isoformat()
+        if self.join_date:
+            data['join_date'] = self.join_date.isoformat()
+        if self.medical_certificate_expiry:
+            data['medical_certificate_expiry'] = self.medical_certificate_expiry.isoformat()
+        if self.last_active:
+            data['last_active'] = self.last_active.isoformat()
+        
+        # Parse comma-separated fields
+        if self.license_classes:
+            data['license_classes_list'] = self.license_classes.split(',')
+        if self.preferred_vehicle_types:
+            data['preferred_vehicle_types_list'] = self.preferred_vehicle_types.split(',')
+        if self.languages:
+            data['languages_list'] = self.languages.split(',')
+        
+        # Include related data
+        if include_assignments:
+            data['recent_assignments'] = [
+                assignment.to_dict() 
+                for assignment in self.assignments[:5]
+            ]
+        
+        if include_performance:
+            data['performance_summary'] = self.get_performance_summary()
+            data['lifetime_stats'] = {
+                'total_trips': self.total_trips,
+                'total_distance_km': self.total_distance,
+                'average_rating': self.average_rating
+            }
+        
+        # Include current vehicle info
+        if self.current_vehicle:
+            data['current_vehicle'] = {
+                'id': self.current_vehicle.id,
+                'registration_number': self.current_vehicle.registration_number,
+                'vehicle_type': self.current_vehicle.vehicle_type
+            }
+        
+        return data
+    
+    @classmethod
+    def get_available_drivers(cls, vehicle_type=None):
+        query = cls.query.filter_by(
+            status='available', 
+            is_active=True
+        ).filter(
+            cls.license_expiry_date > datetime.utcnow().date()
+        )
+        
+        if vehicle_type:
+            query = query.filter(
+                cls.license_type.in_(['medium', 'heavy', 'all'])
+                if vehicle_type in ['truck_medium', 'truck_heavy', 'trailer']
+                else cls.license_type.in_(['light', 'medium', 'heavy', 'all'])
+            )
+        
+        return query.order_by(cls.average_rating.desc()).all()
+    
+    @classmethod
+    def get_drivers_by_license_expiry(cls, days_threshold=30):
+        from datetime import timedelta
+        expiry_date = datetime.utcnow().date() + timedelta(days=days_threshold)
+        return cls.query.filter(
+            cls.license_expiry_date <= expiry_date,
+            cls.license_expiry_date >= datetime.utcnow().date(),
+            cls.is_active == True
+        ).order_by(cls.license_expiry_date).all()
+    
+    def __repr__(self):
+        return f'<Driver {self.name} ({self.employee_id})>'
+
+
+class DriverPerformance(BaseModel):
+    """
+    Detailed driver performance tracking
+    """
+    __tablename__ = 'driver_performance'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    driver_id = db.Column(db.Integer, db.ForeignKey('driver.id'), nullable=False)
+    evaluation_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    evaluator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Performance Metrics (1-5 scale)
+    driving_skill = db.Column(db.Integer, nullable=False)
+    safety_compliance = db.Column(db.Integer, nullable=False)
+    customer_service = db.Column(db.Integer, nullable=False)
+    punctuality = db.Column(db.Integer, nullable=False)
+    vehicle_maintenance = db.Column(db.Integer, nullable=False)
+    
+    # Quantitative Metrics
+    trips_completed = db.Column(db.Integer, default=0)
+    distance_covered = db.Column(db.Float, default=0.0)
+    on_time_deliveries = db.Column(db.Integer, default=0)
+    
+    # Overall
+    overall_rating = db.Column(db.Float, nullable=False)
+    comments = db.Column(db.Text, nullable=True)
+    recommendations = db.Column(db.Text, nullable=True)
+    
+    # FIXED: Simple relationship without User dependency
+    # driver = relationship('driver.Driver', backref='performance_driver')
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.overall_rating is None:
+            self.calculate_overall_rating()
+    
+    def calculate_overall_rating(self):
+        metrics = [
+            self.driving_skill,
+            self.safety_compliance, 
+            self.customer_service,
+            self.punctuality,
+            self.vehicle_maintenance
+        ]
+        self.overall_rating = sum(metrics) / len(metrics)
+        return self.overall_rating
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'driver_id': self.driver_id,
+            'evaluation_date': self.evaluation_date.isoformat(),
+            'evaluator_id': self.evaluator_id,
+            'driving_skill': self.driving_skill,
+            'safety_compliance': self.safety_compliance,
+            'customer_service': self.customer_service,
+            'punctuality': self.punctuality,
+            'vehicle_maintenance': self.vehicle_maintenance,
+            'trips_completed': self.trips_completed,
+            'distance_covered': self.distance_covered,
+            'on_time_deliveries': self.on_time_deliveries,
+            'overall_rating': self.overall_rating,
+            'comments': self.comments,
+            'recommendations': self.recommendations
+        }
+    
+    def __repr__(self):
+        driver_name = self.driver.name if self.driver else 'Unknown'
+        return f'<DriverPerformance {driver_name} - {self.overall_rating}>'

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Customer - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Edit Customer: {{ customer.company_name }}</h2>
+        <a href="{{ url_for('customers.customers') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Customers
+        </a>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('customers.update_customer', id=customer.id) }}" class="needs-validation" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="row g-3">
+                    <!-- Company Name - Required -->
+                    <div class="col-md-4 mb-3">
+                        <label for="company_name" class="form-label">Company Name <span class="text-danger">*</span></label>
+                        <input type="text" name="company_name" id="company_name" class="form-control" 
+                               value="{{ customer.company_name }}" placeholder="Company Name" required>
+                        <div class="invalid-feedback">Company Name is required.</div>
+                    </div>
+                    
+                    <!-- TRN - Required -->
+                    <div class="col-md-4">
+                        <label for="trn" class="form-label">TRN <span class="text-danger">*</span></label>
+                        <input type="text" name="trn" id="trn" class="form-control" 
+                               value="{{ customer.trn }}" placeholder="TRN (15 digits)" required 
+                               maxlength="15" minlength="15" pattern="\d{15}">
+                        <div class="invalid-feedback">TRN must be exactly 15 digits.</div>
+                    </div>
+                    
+                    <!-- Trade License Number - Required -->
+                    <div class="col-md-4">
+                        <label for="trade_license_number" class="form-label">Trade License Number <span class="text-danger">*</span></label>
+                        <input type="text" name="trade_license_number" id="trade_license_number" class="form-control" 
+                               value="{{ customer.trade_license_number }}" placeholder="Trade License Number" required>
+                        <div class="invalid-feedback">Trade License Number is required.</div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-4">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" name="email" id="email" class="form-control" 
+                               value="{{ customer.email }}" placeholder="Email">
+                    </div>
+
+                    <!-- Mobile -->
+                    <div class="col-md-4">
+                        <label for="mobile" class="form-label">Mobile</label>
+                        <input type="text" name="mobile" id="mobile" class="form-control" 
+                               value="{{ customer.mobile }}" placeholder="Mobile">
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="col-md-4">
+                        <label for="phone" class="form-label">Phone</label>
+                        <input type="text" name="phone" id="phone" class="form-control" 
+                               value="{{ customer.phone }}" placeholder="Phone">
+                    </div>
+
+                    <!-- Legal Form -->
+                    <div class="col-md-4">
+                        <label for="legal_form" class="form-label">Legal Form</label>
+                        <input type="text" name="legal_form" id="legal_form" class="form-control" 
+                               value="{{ customer.legal_form or '' }}" placeholder="Legal Form">
+                    </div>
+
+                    <!-- Contact Person -->
+                    <div class="col-md-4">
+                        <label for="contact_person" class="form-label">Contact Person</label>
+                        <input type="text" name="contact_person" id="contact_person" class="form-control" 
+                               value="{{ customer.contact_person or '' }}" placeholder="Contact Person">
+                    </div>
+
+                    <!-- Contact Designation -->
+                    <div class="col-md-4">
+                        <label for="contact_designation" class="form-label">Contact Designation</label>
+                        <input type="text" name="contact_designation" id="contact_designation" class="form-control" 
+                               value="{{ customer.contact_designation or '' }}" placeholder="Contact Designation">
+                    </div>
+
+                    <!-- Address -->
+                    <div class="col-md-6">
+                        <label for="address" class="form-label">Address</label>
+                        <input type="text" name="address" id="address" class="form-control" 
+                               value="{{ customer.address or '' }}" placeholder="Address">
+                    </div>
+
+                    <!-- Emirate -->
+                    <div class="col-md-3">
+                        <label for="emirate" class="form-label">Emirate</label>
+                        <input type="text" name="emirate" id="emirate" class="form-control" 
+                               value="{{ customer.emirate or '' }}" placeholder="Emirate">
+                    </div>
+
+                    <!-- City -->
+                    <div class="col-md-3">
+                        <label for="city" class="form-label">City</label>
+                        <input type="text" name="city" id="city" class="form-control" 
+                               value="{{ customer.city or '' }}" placeholder="City">
+                    </div>
+
+                    <!-- PO Box -->
+                    <div class="col-md-3">
+                        <label for="po_box" class="form-label">PO Box</label>
+                        <input type="text" name="po_box" id="po_box" class="form-control" 
+                               value="{{ customer.po_box or '' }}" placeholder="PO Box">
+                    </div>
+
+                    <!-- Business Activities -->
+                    <div class="col-md-3">
+                        <label for="business_activities" class="form-label">Business Activities</label>
+                        <input type="text" name="business_activities" id="business_activities" class="form-control" 
+                               value="{{ customer.business_activities or '' }}" placeholder="Business Activities">
+                    </div>
+
+                    <!-- Industry Type -->
+                    <div class="col-md-3">
+                        <label for="industry_type" class="form-label">Industry Type</label>
+                        <input type="text" name="industry_type" id="industry_type" class="form-control" 
+                               value="{{ customer.industry_type or '' }}" placeholder="Industry Type">
+                    </div>
+
+                    <!-- Credit Limit -->
+                    <div class="col-md-3">
+                        <label for="credit_limit" class="form-label">Credit Limit</label>
+                        <input type="number" name="credit_limit" id="credit_limit" class="form-control" 
+                               value="{{ customer.credit_limit or 0 }}" placeholder="Credit Limit" step="0.01">
+                    </div>
+
+                    <!-- Payment Terms -->
+                    <div class="col-md-3">
+                        <label for="payment_terms" class="form-label">Payment Terms</label>
+                        <input type="text" name="payment_terms" id="payment_terms" class="form-control" 
+                               value="{{ customer.payment_terms or 'NET30' }}" placeholder="Payment Terms">
+                    </div>
+
+                    <!-- Is Active Checkbox - Placed properly in its own column -->
+                    <div class="col-md-3">
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" 
+                                   {% if customer.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                Active Customer
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Customer
+                    </button>
+                    <a href="{{ url_for('customers.customers') }}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.querySelector('.needs-validation');
+    
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // TRN validation
+    const trnInput = document.getElementById('trn');
+    trnInput.addEventListener('input', function() {
+        if (this.value.length === 15 && !/^\d{15}$/.test(this.value)) {
+            this.setCustomValidity('TRN must be exactly 15 digits.');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+</script>
+{% endblock %}

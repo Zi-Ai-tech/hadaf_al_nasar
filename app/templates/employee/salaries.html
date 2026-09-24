@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salaries - Hadaf Al Nasar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(14, 8, 8, 0.1);
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            margin: 4px 0;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        
+        .main-content {
+            background-color: #f5f7fb;
+            min-height: 100vh;
+        }
+        
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid var(--light-gray);
+            padding: 15px 20px;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            padding: 10px 20px;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            border-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary);
+            border-color: var(--primary);
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline-warning {
+            color: var(--warning);
+            border-color: var(--warning);
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-outline-warning:hover {
+            background-color: var(--warning);
+            border-color: var(--warning);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-info {
+            color: var(--success);
+            border-color: var(--success);
+            border-radius: var(--border-radius);
+        }
+        
+        .btn-outline-info:hover {
+            background-color: var(--success);
+            border-color: var(--success);
+            transform: translateY(-2px);
+        }
+        
+        .table {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 0 0 1px var(--light-gray);
+        }
+        
+        .table thead th {
+            background-color: var(--light);
+            border-bottom: 2px solid var(--light-gray);
+            font-weight: 600;
+            color: var(--gray);
+            padding: 15px;
+        }
+        
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .table tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-paid {
+            background-color: rgba(76, 201, 240, 0.2);
+            color: var(--success);
+        }
+        
+        .badge-processing {
+            background-color: rgba(248, 150, 30, 0.2);
+            color: var(--warning);
+        }
+        
+        .badge-pending {
+            background-color: rgba(108, 117, 125, 0.2);
+            color: var(--gray);
+        }
+        
+        .summary-card {
+            border-radius: var(--border-radius);
+            color: white;
+            padding: 20px;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .summary-card .card-title {
+            color: white;
+            font-size: 14px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .summary-card .card-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .card-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #5a7bfc 100%);
+        }
+        
+        .card-info {
+            background: linear-gradient(135deg, var(--success) 0%, #6ad4f4 100%);
+        }
+        
+        .card-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #fab155 100%);
+        }
+        
+        .card-success {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        }
+        
+        .page-header {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--light-gray);
+            margin-bottom: 25px;
+        }
+        
+        .page-title {
+            font-weight: 700;
+            color: var(--dark);
+            margin: 0;
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            padding: 10px 15px;
+            border: 1px solid var(--light-gray);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+        
+        .action-buttons .btn {
+            margin-left: 5px;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .modal-header {
+            background-color: white;
+            border-bottom: 1px solid var(--light-gray);
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--light-gray);
+            border-radius: 0 0 var(--border-radius) var(--border-radius) !important;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+            }
+            
+            .summary-card {
+                margin-bottom: 15px;
+            }
+            
+            .action-buttons {
+                margin-top: 10px;
+            }
+            
+            .action-buttons .btn {
+                margin: 2px;
+            }
+
+            .slip-details {
+                grid-template-columns: 1fr;
+            }
+
+            .employee-select-card:hover {
+                transform: translateY(-3px);
+                box-shadow: var(--box-shadow);
+                border-color: var(--primary) !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">Hadaf Al Nasar</h4>
+                        <p class="text-white-50 small">WPS Management</p>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('employee.employees') }}">
+                                <i class="fas fa-users"></i>
+                                Employees
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ url_for('salary.salaries') }}">
+                                <i class="fas fa-money-bill-wave"></i>
+                                Salaries
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('expense.expenses') }}">
+                                <i class="fas fa-receipt"></i>
+                                Expenses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('income.incomes') }}">
+                                <i class="fas fa-money-bill-trend-up"></i>
+                                Incomes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('salary.salaries') }}">
+                                <i class="fas fa-chart-line"></i>
+                                Financial Reports
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 main-content p-4">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h1 class="page-title">
+                            <i class="fas fa-money-bill-wave me-2"></i>Salary Management
+                        </h1>
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#selectEmployeeModal">
+                                <i class="fas fa-plus me-2"></i> Process Salary
+                            </button>
+                        </div>
+                        <!-- Employee Selection Modal -->
+                        <div class="modal fade" id="selectEmployeeModal" tabindex="-1" aria-labelledby="selectEmployeeModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="selectEmployeeModalLabel">
+                                            <i class="fas fa-user-plus me-2"></i>Select Employee
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        {% if all_employees and all_employees|length > 0 %}
+                                        <div class="row">
+                                            {% for emp in all_employees %}
+                                            <div class="col-md-6 mb-3">
+                                                <div class="employee-select-card"style="border: 1px solid var(--light-gray); border-radius: var(--border-radius);
+                                                padding: 15px; cursor: pointer; transition: all 0.3s ease; background: white;"
+                                                onclick="window.location.href='{{ url_for('salary.process_salary', employee_id=emp.id) }}'">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3 text-white fw-bold"
+                                                        style="width: 40px; height: 40px;">
+                                                        {{ emp.name[0] if emp.name else 'E' }}
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="mb-0">{{ emp.name }}</h6>
+                                                            <small class="text-muted">{{ emp.position }}</small>
+                                                            <div class="mt-1">
+                                                                <span class="badge bg-light text-dark">
+                                                                    <i class="fas fa-money-bill me-1"></i>
+                                                                    AED {{ "%.2f"|format(emp.basic_salary) }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-primary">
+                                                            <i class="fas fa-chevron-right"></i>
+                                                        </div>
+                                                    </div>                                            
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                                            <h5 class="text-muted">No Active Employees Found</h5>
+                                            <p class="text-muted">Add employees first to process their salaries.</p>
+                                            <a href="{{ url_for('employee.employees') }}" class="btn btn-primary">
+                                                <i class="fas fa-user-plus me-2"></i> Go to Employees
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>                                                                                             
+                    </div>
+                </div>
+
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' if category == 'info' else 'exclamation-circle' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Filter form -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-filter me-2"></i>Filter Salaries
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="GET" action="{{ url_for('salary.salaries') }}" class="row g-3">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="col-md-3">
+                                <label for="month" class="form-label">Month</label>
+                                <select class="form-select" id="month" name="month">
+                                    <option value="">All Months</option>
+                                    {% for i in range(1, 13) %}
+                                    <option value="{{ i }}" {% if month == i %}selected{% endif %}>{{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="year" class="form-label">Year</label>
+                                <select class="form-select" id="year" name="year">
+                                    {% for i in range(2020, 2031) %}
+                                    <option value="{{ i }}" {% if year == i %}selected{% endif %}>{{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 align-self-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-check me-2"></i>Apply Filter
+                                </button>
+                                <a href="{{ url_for('salary.salaries') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-redo me-2"></i>Reset
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Salary summary -->
+                {% if totals %}
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="summary-card card-primary">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Basic Salary</h6>
+                                <h3 class="card-value">AED {{ "%.2f"|format(totals.basic_salary) }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card card-info">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Allowances</h6>
+                                <h3 class="card-value">AED {{ "%.2f"|format(totals.allowances) }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card card-warning">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Deductions</h6>
+                                <h3 class="card-value">AED {{ "%.2f"|format(totals.deductions) }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-card card-success">
+                            <div class="card-body">
+                                <h6 class="card-title">Net Salary Paid</h6>
+                                <h3 class="card-value">AED {{ "%.2f"|format(totals.net_salary) }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Salaries table -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">
+                            <i class="fas fa-list me-2"></i>Salary Records
+                        </h5>
+                        <div class="text-muted small">
+                            Showing {{ salaries|length }} records
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Period</th>
+                                        <th>Basic Salary</th>
+                                        <th>Allowances</th>
+                                        <th>Overtime</th>
+                                        <th>Deductions</th>
+                                        <th>Net Salary</th>
+                                        <th>Status</th>
+                                        <th>Payment Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for salary in salaries %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2 text-white fw-bold">
+                                                    {{ salary.employee.name[0] }}
+                                                </div>
+                                                {{ salary.employee.name }}
+                                            </div>
+                                        </td>
+                                        <td>{{ salary.month }}/{{ salary.year }}</td>
+                                        <td class="fw-bold">AED {{ "%.2f"|format(salary.basic_salary) }}</td>
+                                        <td>AED {{ "%.2f"|format(salary.housing_allowance + salary.transportation_allowance + salary.other_allowances) }}</td>
+                                        <td>AED {{ "%.2f"|format(salary.overtime_hours * salary.overtime_rate) }}</td>
+                                        <td class="text-danger">
+                                            AED {{ "%.2f"|format(salary.total_deductions) }}
+                                        </td>
+                                        <td class="fw-bold text-success">AED {{ "%.2f"|format(salary.net_salary) }}</td>
+                                        <td>
+                                            {% if salary.status.value == 'paid' %}
+                                                <span class="status-badge badge-paid">
+                                                    <i class="fas fa-check-circle me-1"></i> Paid
+                                                </span>
+                                            {% elif salary.status.value == 'processing' %}
+                                                <span class="status-badge badge-processing">
+                                                    <i class="fas fa-spinner me-1"></i> Processing
+                                                </span>
+                                            {% else %}
+                                                <span class="status-badge badge-pending">
+                                                    <i class="fas fa-clock me-1"></i> Pending
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ salary.payment_date.strftime('%Y-%m-%d') if salary.payment_date else '-' }}</td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <a href="{{ url_for('salary.view_salary', salary_id=salary.id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('salary.edit_salary', salary_id=salary.id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% if salary.status.value != 'paid' %}
+                                                <form action="{{ url_for('salary.mark_salary_paid', salary_id=salary.id) }}" method="POST" style="display: inline;">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Mark as Paid" onclick="return confirm('Are you sure you want to mark this salary as paid?')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="10" class="text-center py-4">
+                                            <div class="text-muted">
+                                                <i class="fas fa-inbox fa-2x mb-3"></i>
+                                                <h5>No salary records found</h5>
+                                                <p>Try adjusting your filters or process a new salary</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Employee Selection Modal -->
+    <div class="modal fade" id="selectEmployeeModal" tabindex="-1" aria-labelledby="selectEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="selectEmployeeModalLabel">
+                        <i class="fas fa-user-plus me-2"></i>Select Employee
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Select an employee to process their salary:</p>
+                    <div class="row" id="employeeList">
+                        <!-- Employees will be loaded here via AJAX -->
+                        <div class="col-12 text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading employees...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add animation to summary cards
+            const summaryCards = document.querySelectorAll('.summary-card');
+            summaryCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+            
+            // Add row highlighting on hover
+            const tableRows = document.querySelectorAll('.table tbody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = 'rgba(67, 97, 238, 0.05)';
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+            
+            // Auto-dismiss alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    if (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            });
+
+            // Employee selection modal functionality
+            const processSalaryBtn = document.getElementById('processSalaryBtn');
+            const employeeList = document.getElementById('employeeList');
+        
+            // Load employees when modal is shown
+            const selectEmployeeModal = document.getElementById('selectEmployeeModal');
+            if (selectEmployeeModal) {
+                selectEmployeeModal.addEventListener('shown.bs.modal', function() {
+                    loadEmployees();
+                });
+            }
+        
+            function loadEmployees() {
+                // Fetch active employees via AJAX
+                fetch('/api/employees/active')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            employeeList.innerHTML = '';
+                            data.forEach(employee => {
+                                const employeeCard = createEmployeeCard(employee);
+                                employeeList.appendChild(employeeCard);
+                            });
+                        } else {
+                            employeeList.innerHTML = `
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No active employees found. Please add employees first.
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading employees:', error);
+                        employeeList.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    Error loading employees. Please try again.
+                                </div>
+                            </div>
+                        `;
+                    });
+            }
+        
+            function createEmployeeCard(employee) {
+                const col = document.createElement('div');
+                col.className = 'col-md-6 mb-3';
+            
+                const card = document.createElement('div');
+                card.className = 'employee-select-card';
+                card.style.cssText = `
+                    border: 1px solid var(--light-gray);
+                    border-radius: var(--border-radius);
+                    padding: 15px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    background: white;
+                `;
+            
+                card.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3 text-white fw-bold" 
+                            style="width: 40px; height: 40px;">
+                            ${employee.name ? employee.name[0].toUpperCase() : 'E'}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">${employee.name}</h6>
+                            <small class="text-muted">${employee.position || 'No position'}</small>
+                            <div class="mt-1">
+                                <span class="badge bg-light text-dark">
+                                    <i class="fas fa-money-bill me-1"></i>
+                                    AED ${employee.basic_salary ? parseFloat(employee.basic_salary).toFixed(2) : '0.00'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="text-primary">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                `;
+            
+                // Add click event to redirect to process salary page
+                card.addEventListener('click', function() {
+                    window.location.href = `/salary/process/${employee.id}`;
+                });
+            
+                // Add hover effects
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px)';
+                    this.style.boxShadow = 'var(--box-shadow)';
+                    this.style.borderColor = 'var(--primary)';
+                });
+            
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                    this.style.borderColor = 'var(--light-gray)';
+                });
+            
+                col.appendChild(card);
+                return col;
+            }
+        });
+    </script>
+</body>
+</html>

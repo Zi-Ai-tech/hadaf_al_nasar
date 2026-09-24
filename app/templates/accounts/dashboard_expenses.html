@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Expenses - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Expenses</h1>
+        <p class="text-muted mb-0">Complete expense records and details.</p>
+    </div>
+    <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+</div>
+
+<div class="card mb-4 border-warning">
+    <div class="card-body">
+        <div class="text-muted">Total expenses (converted to AED)</div>
+        <h2 class="text-warning mb-0">AED {{ "%.2f"|format(total_expenses) }}</h2>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+            <thead>
+                <tr><th>Date</th><th>Expense #</th><th>Type</th><th>Description</th><th>Vendor</th><th>Status</th><th class="text-end">Total</th></tr>
+            </thead>
+            <tbody>
+            {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.expense_date.strftime('%Y-%m-%d') if expense.expense_date else '' }}</td>
+                    <td>{{ expense.expense_number }}</td>
+                    <td>{{ expense.expense_type.value if expense.expense_type else '' }}</td>
+                    <td>{{ expense.description }}</td>
+                    <td>{{ expense.vendor_name or '-' }}</td>
+                    <td><span class="badge bg-secondary">{{ expense.status }}</span></td>
+                    <td class="text-end">{{ "%.2f"|format(expense.total_amount or 0) }} {{ expense.currency or 'AED' }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7" class="text-center text-muted py-4">No expenses recorded.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

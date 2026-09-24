@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Report - Hadaf Al Nasar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #sidebar {
+            min-height: 100vh;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .nav-link {
+            color: #333;
+        }
+        .nav-link:hover {
+            background-color: #f8f9fa;
+        }
+        .nav-link.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .card {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        .table th {
+            border-top: none;
+        }
+        .alert {
+            margin-top: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+        .summary-card {
+            transition: transform 0.3s;
+        }
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+                <div class="position-sticky">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('employee.employees') }}">
+                                <i class="fas fa-users"></i>
+                                Employees
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('salary.salaries') }}">
+                                <i class="fas fa-money-bill-wave"></i>
+                                Salaries
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('expense.expenses') }}">
+                                <i class="fas fa-receipt"></i>
+                                Expenses
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('income.incomes') }}">
+                                <i class="fas fa-money-bill-trend-up"></i>
+                                Incomes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ url_for('financial_report.financial_report') }}">
+                                <i class="fas fa-chart-line"></i>
+                                Financial Reports
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Add this right after the main content begins -->
+                {% set current_year_num = now.year if now else report.period.year|default(datetime.now().year) %}
+                {% set current_month_num = now.month if now else report.period.month|default(datetime.now().month) %}
+                {% set expense_types = expense_types if expense_types else get_expense_types() %}
+                {% set income_types = income_types if income_types else get_income_types() %}
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Financial Overview Report</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            {% set current_month = now.month if now else current_month_num %}
+                            {% set current_year = now.year if now else current_year_num %}
+                            <a href="{{ url_for('financial_report.financial_report') }}?month={{ current_month }}&year={{ current_year }}" 
+                               class="btn btn-outline-primary">
+                                This Month
+                            </a>
+                            <a href="{{ url_for('financial_report.financial_report') }}?year={{ current_year }}" 
+                               class="btn btn-outline-primary">
+                                This Year
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                {% if error %}
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> {{ error }}
+                </div>
+                {% endif %}
+                
+                <!-- Report Period Filter -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">Report Period</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="GET" action="{{ url_for('financial_report.financial_report') }}" class="row g-3">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="col-md-3">
+                                <label for="month" class="form-label">Month</label>
+                                <select class="form-select" id="month" name="month">
+                                    <option value="">All Months</option>
+                                    {% for i in range(1, 13) %}
+                                    <option value="{{ i }}" 
+                                            {% if request.args.get('month')|int == i %}selected{% endif %}>
+                                        {{ i }} - {{ date(2023, i, 1).strftime('%B') }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="year" class="form-label">Year</label>
+                                <select class="form-select" id="year" name="year">
+                                    {% for i in range(2020, 2031) %}
+                                    <option value="{{ i }}" 
+                                            {% if request.args.get('year')|int == i or (not request.args.get('year') and current_year == i) %}selected{% endif %}>
+                                        {{ i }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3 align-self-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-chart-bar"></i> Generate Report
+                                </button>
+                                <a href="{{ url_for('financial_report.financial_report') }}" class="btn btn-secondary">
+                                    <i class="fas fa-redo"></i> Reset
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white summary-card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Total Income</h6>
+                                <h3>AED {{ "%.2f"|format(report.total_income) }}</h3>
+                                {% if report.period.month_name %}
+                                <small>{{ report.period.month_name }} {{ report.period.year }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-danger text-white summary-card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Total Expenses</h6>
+                                <h3>AED {{ "%.2f"|format(report.total_expenses) }}</h3>
+                                {% if report.period.month_name %}
+                                <small>{{ report.period.month_name }} {{ report.period.year }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-{{ 'success' if report.profit >= 0 else 'danger' }} text-white summary-card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Net Profit/Loss</h6>
+                                <h3>AED {{ "%.2f"|format(report.profit) }}</h3>
+                                {% if report.period.month_name %}
+                                <small>{{ report.period.month_name }} {{ report.period.year }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white summary-card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Profit Margin</h6>
+                                <h3>
+                                    {% if report.total_income > 0 %}
+                                        {{ "%.1f"|format((report.profit / report.total_income * 100)) }}%
+                                    {% else %}
+                                        0.0%
+                                    {% endif %}
+                                </h3>
+                                {% if report.period.month_name %}
+                                <small>{{ report.period.month_name }} {{ report.period.year }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Expense Breakdown</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="expenseChart"></canvas>
+                                </div>
+                                {% if not report.expense_totals %}
+                                <div class="alert alert-info mt-3">
+                                    No expense data available for the selected period.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Income Breakdown</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="incomeChart"></canvas>
+                                </div>
+                                {% if not report.income_totals %}
+                                <div class="alert alert-info mt-3">
+                                    No income data available for the selected period.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Expense Details Table -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Expense Details</h5>
+                                <span class="badge bg-primary">{{ report.expense_totals|length }} Categories</span>
+                            </div>
+                            <div class="card-body">
+                                {% if report.expense_totals %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Expense Type</th>
+                                                <th>Amount (AED)</th>
+                                                <th>Percentage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for expense_type, amount in report.expense_totals.items() %}
+                                            <tr>
+                                                <td>
+                                                    {% if expense_types and expense_type in expense_types %}
+                                                        {{ expense_types[expense_type] }}
+                                                    {% else %}
+                                                        {{ expense_type|replace('_', ' ')|title }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>AED {{ "%.2f"|format(amount) }}</td>
+                                                <td>
+                                                    {% if report.total_expenses > 0 %}
+                                                        {{ "%.1f"|format((amount / report.total_expenses * 100)) }}%
+                                                    {% else %}
+                                                        0.0%
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-primary">
+                                                <th>Total Expenses</th>
+                                                <th>AED {{ "%.2f"|format(report.total_expenses) }}</th>
+                                                <th>100%</th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-warning">
+                                    No expense data available for the selected period.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Income Details Table -->
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Income Details</h5>
+                                <span class="badge bg-primary">{{ report.income_totals|length }} Categories</span>
+                            </div>
+                            <div class="card-body">
+                                {% if report.income_totals %}
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Income Type</th>
+                                                <th>Amount (AED)</th>
+                                                <th>Percentage</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for income_type, amount in report.income_totals.items() %}
+                                            <tr>
+                                                <td>
+                                                    {% if income_types and income_type in income_types %}
+                                                        {{ income_types[income_type] }}
+                                                    {% else %}
+                                                        {{ income_type|replace('_', ' ')|title }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>AED {{ "%.2f"|format(amount) }}</td>
+                                                <td>
+                                                    {% if report.total_income > 0 %}
+                                                        {{ "%.1f"|format((amount / report.total_income * 100)) }}%
+                                                    {% else %}
+                                                        0.0%
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-primary">
+                                                <th>Total Income</th>
+                                                <th>AED {{ "%.2f"|format(report.total_income) }}</th>
+                                                <th>100%</th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-warning">
+                                    No income data available for the selected period.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Salary Summary -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title">Salary Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="card bg-warning text-dark summary-card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Total Salaries</h6>
+                                        <h3>AED {{ "%.2f"|format(report.salary_report.totals.net_salary) }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-secondary text-white summary-card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Employees Paid</h6>
+                                        <h3>{{ report.salary_report.totals.count }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-info text-white summary-card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Avg. Salary</h6>
+                                        <h3>
+                                            {% if report.salary_report.totals.count > 0 %}
+                                                AED {{ "%.2f"|format(report.salary_report.totals.net_salary / report.salary_report.totals.count) }}
+                                            {% else %}
+                                                AED 0.00
+                                            {% endif %}
+                                        </h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-primary text-white summary-card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Salary % of Expenses</h6>
+                                        <h3>
+                                            {% if report.total_expenses > 0 %}
+                                                {{ "%.1f"|format((report.salary_report.totals.net_salary / report.total_expenses * 100)) }}%
+                                            {% else %}
+                                                0.0%
+                                            {% endif %}
+                                        </h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Transaction Details -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Recent Financial Transactions</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="transactionTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="expenses-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#expenses" type="button" role="tab">
+                                    <i class="fas fa-receipt"></i> Expenses
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="incomes-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#incomes" type="button" role="tab">
+                                    <i class="fas fa-money-bill-trend-up"></i> Incomes
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="transactionTabsContent">
+                            <!-- Expenses Tab -->
+                            <div class="tab-pane fade show active" id="expenses" role="tabpanel">
+                                <div class="table-responsive mt-3">
+                                    {% if report.all_expenses %}
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Type</th>
+                                                <th>Amount (AED)</th>
+                                                <th>Description</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for expense in report.all_expenses %}
+                                            <tr>
+                                                <td>{{ expense.expense_date.strftime('%Y-%m-%d') }}</td>
+                                                <td>
+                                                    {% if expense.expense_type and hasattr(expense.expense_type, 'value') %}
+                                                        {{ expense.expense_type.value|replace('_', ' ')|title }}
+                                                    {% else %}
+                                                        {{ expense.expense_type|replace('_', ' ')|title if expense.expense_type else 'N/A' }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>AED {{ "%.2f"|format(expense.total_amount) }}</td>
+                                                <td>{{ expense.description|truncate(30) if expense.description else '-' }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ get_status_badge(expense.status) }}">
+                                                        {{ expense.status|title if expense.status else 'Unknown' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    {% else %}
+                                    <div class="alert alert-info mt-3">
+                                        No expense transactions found for the selected period.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Incomes Tab -->
+                            <div class="tab-pane fade" id="incomes" role="tabpanel">
+                                <div class="table-responsive mt-3">
+                                    {% if report.all_incomes %}
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Type</th>
+                                                <th>Amount (AED)</th>
+                                                <th>Description</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for income in report.all_incomes %}
+                                            <tr>
+                                                <td>{{ income.income_date.strftime('%Y-%m-%d') }}</td>
+                                                <td>
+                                                    {% if income.income_type and hasattr(income.income_type, 'value') %}
+                                                        {{ income.income_type.value|replace('_', ' ')|title }}
+                                                    {% else %}
+                                                        {{ income.income_type|replace('_', ' ')|title if income.income_type else 'N/A' }}
+                                                    {% endif %}
+                                                </td>
+                                                <td>AED {{ "%.2f"|format(income.total_amount) }}</td>
+                                                <td>{{ income.description|truncate(30) if income.description else '-' }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ get_status_badge(income.status) }}">
+                                                        {{ income.status|title if income.status else 'Unknown' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    {% else %}
+                                    <div class="alert alert-info mt-3">
+                                        No income transactions found for the selected period.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current year and month as default if not specified
+            const currentYear = {{ current_year_num }};
+            const currentMonth = {{ current_month_num }};
+
+            // Set form values if they're not already set
+            const yearSelect = document.getElementById('year');
+            const monthSelect = document.getElementById('month');
+
+            if (yearSelect && !yearSelect.value) {
+                yearSelect.value = currentYear;
+            }
+
+            if (monthSelect && !monthSelect.value) {
+                monthSelect.value = "{{ request.args.get('month', '') }}";
+            }
+            
+            // Initialize charts only if data exists
+            initializeCharts();
+        });
+        
+        function initializeCharts() {
+            // Expense Chart
+            const expenseCtx = document.getElementById('expenseChart');
+            if (expenseCtx) {
+                // Get data from template variables
+                const expenseLabels = [
+                    {% for expense_type, amount in report.expense_totals.items() %}
+                    {% if expense_types and expense_type in expense_types %}
+                        '{{ expense_types[expense_type] }}',
+                    {% else %}
+                        '{{ expense_type|replace('_', ' ')|title }}',
+                    {% endif %}
+                    {% endfor %}
+                ];
+                
+                const expenseData = [
+                    {% for expense_type, amount in report.expense_totals.items() %}
+                    {{ amount }},
+                    {% endfor %}
+                ];
+                
+                if (expenseData.length > 0) {
+                    const expenseChart = new Chart(expenseCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: expenseLabels,
+                            datasets: [{
+                                data: expenseData,
+                                backgroundColor: [
+                                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                                    '#9966FF', '#FF9F40', '#C9CBCF', '#8AC926',
+                                    '#1982C4', '#6A4C93', '#F15BB5', '#00BBF9'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                            return `${label}: AED ${value.toFixed(2)} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    expenseCtx.parentElement.innerHTML = `
+                        <div class="alert alert-info">
+                            No expense data available for chart.
+                        </div>
+                    `;
+                }
+            }
+            
+            // Income Chart
+            const incomeCtx = document.getElementById('incomeChart');
+            if (incomeCtx) {
+                // Get data from template variables
+                const incomeLabels = [
+                    {% for income_type, amount in report.income_totals.items() %}
+                    {% if income_types and income_type in income_types %}
+                        '{{ income_types[income_type] }}',
+                    {% else %}
+                        '{{ income_type|replace('_', ' ')|title }}',
+                    {% endif %}
+                    {% endfor %}
+                ];
+                
+                const incomeData = [
+                    {% for income_type, amount in report.income_totals.items() %}
+                    {{ amount }},
+                    {% endfor %}
+                ];
+                
+                if (incomeData.length > 0) {
+                    const incomeChart = new Chart(incomeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: incomeLabels,
+                            datasets: [{
+                                data: incomeData,
+                                backgroundColor: [
+                                    '#4BC0C0', '#9966FF', '#FF9F40', '#36A2EB',
+                                    '#FFCE56', '#FF6384', '#C9CBCF', '#8AC926',
+                                    '#1982C4', '#6A4C93', '#F15BB5', '#00BBF9'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'right',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                            return `${label}: AED ${value.toFixed(2)} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    incomeCtx.parentElement.innerHTML = `
+                        <div class="alert alert-info">
+                            No income data available for chart.
+                        </div>
+                    `;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

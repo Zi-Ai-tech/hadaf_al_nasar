@@ -1,0 +1,2 @@
+[main/sessions/main/7093633a-972a-4944-a4f3-60efa051aaea#L209] User: can you idnetify which workspace you are connected to?
+[main/sessions/main/7093633a-972a-4944-a4f3-60efa051aaea#L213] User: Can you identify which workspace you are connected to?

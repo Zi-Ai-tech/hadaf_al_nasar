@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics - Hadaf Al Nasar{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Reports & Analytics</h2>
+    
+    <!-- Date Range Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="report_type" class="form-label">Report Type</label>
+                    <select class="form-control" id="report_type" name="report_type">
+                        <option value="financial">Financial Summary</option>
+                        <option value="shipments">Shipment Analysis</option>
+                        <option value="customers">Customer Reports</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Total Revenue</h6>
+                    <h3>{{ total_revenue|default(0)|round(2) }} AED</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">VAT Collected</h6>
+                    <h3>{{ vat_collected|default(0)|round(2) }} AED</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Total Shipments</h6>
+                    <h3>{{ total_shipments|default(0) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Active Customers</h6>
+                    <h3>{{ active_customers|default(0) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Sections -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Revenue by Month (AED)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Shipment Status Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="shipmentChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Reports -->
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Detailed Financial Report</h5>
+            <div>
+                <button class="btn btn-sm btn-outline-primary" onclick="exportToExcel()">
+                    <i class="fas fa-download"></i> Export to Excel
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="generatePDF()">
+                    <i class="fas fa-file-pdf"></i> Generate PDF
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="financialReport">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>VAT Invoices</th>
+                            <th>Non-VAT Invoices</th>
+                            <th>Total Revenue</th>
+                            <th>VAT Collected</th>
+                            <th>Growth %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in financial_reports %}
+                        <tr>
+                            <td>{{ report.month }}</td>
+                            <td>{{ report.vat_invoices }}</td>
+                            <td>{{ report.non_vat_invoices }}</td>
+                            <td>{{ report.total_revenue }} AED</td>
+                            <td>{{ report.vat_collected }} AED</td>
+                            <td class="{% if report.growth > 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ report.growth }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Revenue Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+new Chart(revenueCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+            label: 'Revenue (AED)',
+            data: [12000, 19000, 15000, 22000, 18000, 25000],
+            backgroundColor: 'rgba(54, 162, 235, 0.8)'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Shipment Chart
+const shipmentCtx = document.getElementById('shipmentChart').getContext('2d');
+new Chart(shipmentCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Delivered', 'In Transit', 'Pending', 'Cancelled'],
+        datasets: [{
+            data: [45, 25, 20, 10],
+            backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+function exportToExcel() {
+    // Implement Excel export functionality
+    alert('Excel export functionality will be implemented here');
+}
+
+function generatePDF() {
+    // Implement PDF generation
+    alert('PDF generation functionality will be implemented here');
+}
+</script>
+
+<style>
+.container {
+    max-width: 1400px;
+}
+
+.card {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.display-6 {
+    font-size: 1.8rem;
+}
+</style>
+{% endblock %}
